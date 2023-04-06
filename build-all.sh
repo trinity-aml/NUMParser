@@ -63,7 +63,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   set_gomips "$GOARCH"
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 #  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
@@ -82,7 +82,7 @@ declare -a COMPILERS=(
   "amd64:x86_64-linux-android21-clang"
 )
 
-export NDK_TOOLCHAIN=/Users/yourok/Library/Android/sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64
+export NDK_TOOLCHAIN=/home/trinity1980/ndk/toolchains/llvm/prebuilt/linux-x86_64
 
 GOOS=android
 

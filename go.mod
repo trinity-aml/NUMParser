@@ -1,10 +1,11 @@
 module NUMParser
 
-go 1.19
+go 1.20
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/agnivade/levenshtein v1.1.1
+	github.com/alexflint/go-arg v1.4.3
 	github.com/gin-gonic/gin v1.8.1
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/jmcvetta/napping v3.2.0+incompatible
@@ -13,6 +14,7 @@ require (
 )
 
 require (
+	github.com/alexflint/go-scalar v1.1.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect

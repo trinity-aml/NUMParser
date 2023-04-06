@@ -7,7 +7,10 @@ import (
 	"NUMParser/utils"
 	"bytes"
 	"github.com/PuerkitoBio/goquery"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,10 +18,26 @@ import (
 	"time"
 )
 
+func loadRutorHost() ([]string, bool) {
+	dir := filepath.Dir(os.Args[0])
+	name := filepath.Join(dir, "rutor_host.txt")
+	buf, err := ioutil.ReadFile(name)
+	if err == nil {
+		list := strings.Split(string(buf), "\n")
+		var ret []string
+		for _, l := range list {
+			if strings.HasPrefix(l, "http") {
+				ret = append(ret, l)
+			}
+		}
+		return ret, true
+	}
+	return nil, false
+}
+
 var (
 	rutorHosts = []string{
-		//"http://rutor.lib",
-		"http://rutor.info",
+		"http://rutor.is",
 	}
 	rhPos = 0
 	mhost sync.Mutex
@@ -45,7 +64,14 @@ type parseLink struct {
 func getHost() string {
 	mhost.Lock()
 	defer mhost.Unlock()
+	got, get := loadRutorHost()
+	if len(got) > 0 && get == true {
+		rutorHosts = nil
+		rutorHosts = got
+		rhPos = 0
+	}
 	host := rutorHosts[rhPos]
+	log.Println(host)
 	rhPos++
 	if rhPos >= len(rutorHosts) {
 		rhPos = 0

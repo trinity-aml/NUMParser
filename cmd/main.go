@@ -90,12 +90,15 @@ func scanMoviesYears() {
 
 func copy() {
 	dir := filepath.Dir(os.Args[0])
-	logOut, err := exec.Command("/bin/sh", filepath.Join(dir, "copy.sh")).CombinedOutput()
-	if err != nil {
-		log.Println("Error copy releases:", err)
+	_, err := os.Stat("copy.sh")
+	if err == nil {
+		logOut, err := exec.Command("/bin/sh", filepath.Join(dir, "copy.sh")).CombinedOutput()
+		if err != nil {
+			log.Println("Error copy releases:", err)
+		}
+		output := string(logOut)
+		log.Println(output)
 	}
-	output := string(logOut)
-	log.Println(output)
 }
 
 func calcTime() *time.Time {

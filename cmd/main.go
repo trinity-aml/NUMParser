@@ -7,6 +7,7 @@ import (
 	"NUMParser/movies/tmdb"
 	"NUMParser/parser"
 	"NUMParser/releases"
+	"NUMParser/version"
 	"NUMParser/web"
 	"fmt"
 	"github.com/alexflint/go-arg"
@@ -16,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -27,7 +29,12 @@ type args struct {
 var params args
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	arg.MustParse(&params)
+
+	fmt.Println("=========== START ===========")
+	fmt.Println("numParser_"+version.Version+",", runtime.Version()+",", "CPU Num:", runtime.NumCPU())
 
 	if params.Port == "" {
 		params.Port = "38888"

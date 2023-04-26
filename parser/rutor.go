@@ -7,7 +7,6 @@ import (
 	"NUMParser/utils"
 	"bytes"
 	"github.com/PuerkitoBio/goquery"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,29 +17,26 @@ import (
 	"time"
 )
 
-func loadRutorHost() ([]string, bool) {
+func loadRutorHost() []string {
 	dir := filepath.Dir(os.Args[0])
 	name := filepath.Join(dir, "rutor_host.txt")
-	buf, err := ioutil.ReadFile(name)
+	buf, err := os.ReadFile(name)
 	if err == nil {
 		list := strings.Split(string(buf), "\n")
 		var ret []string
 		for _, l := range list {
 			if strings.HasPrefix(l, "http") {
-				ret = append(ret, l)
+				ret = append(ret, strings.TrimSpace(l))
 			}
 		}
-		return ret, true
+		return ret
 	}
-	return nil, false
+	return nil
 }
 
 var (
-	rutorHosts = []string{
-		"http://rutor.is",
-	}
-	rhPos = 0
-	mhost sync.Mutex
+	hostsPos = 0
+	mhost    sync.Mutex
 )
 
 type RutorParser struct {
@@ -64,17 +60,14 @@ type parseLink struct {
 func getHost() string {
 	mhost.Lock()
 	defer mhost.Unlock()
-	got, get := loadRutorHost()
-	if len(got) > 0 && get == true {
-		rutorHosts = nil
-		rutorHosts = got
-		rhPos = 0
+	hosts := loadRutorHost()
+	if len(hosts) == 0 {
+		return "http://rutor.info"
 	}
-	host := rutorHosts[rhPos]
-	log.Println(host)
-	rhPos++
-	if rhPos >= len(rutorHosts) {
-		rhPos = 0
+	host := hosts[hostsPos]
+	hostsPos++
+	if hostsPos >= len(hosts) {
+		hostsPos = 0
 	}
 	return host
 }

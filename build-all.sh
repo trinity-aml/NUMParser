@@ -1,15 +1,15 @@
 #!/bin/bash
 
 PLATFORMS=(
+  'linux/amd64'
+  'darwin/arm64'
   'linux/arm64'
   'linux/arm7'
-  'linux/amd64'
   'linux/arm5'
   'linux/386'
   'windows/amd64'
   'windows/386'
   'darwin/amd64'
-  'darwin/arm64'
   'freebsd/amd64'
   'linux/mips'
   'linux/mipsle'
@@ -61,7 +61,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   GOARCH=${PLATFORM#*/}
   set_goarm "$GOARCH"
   set_gomips "$GOARCH"
-  BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
+  BIN_FILENAME="${OUTPUT}_${GOOS}_${GOARCH}${GOARM}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
@@ -94,7 +94,7 @@ for V in "${COMPILERS[@]}"; do
   export CC="$NDK_TOOLCHAIN/bin/$COMPILER"
   export CXX="$NDK_TOOLCHAIN/bin/$COMPILER++"
   set_goarm "$GOARCH"
-  BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
+  BIN_FILENAME="${OUTPUT}_${GOOS}_${GOARCH}${GOARM}"
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"

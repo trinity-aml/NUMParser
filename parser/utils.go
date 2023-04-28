@@ -60,6 +60,7 @@ func get(link string) (string, error) {
 	for i := 0; i < 10; i++ {
 		body, err = bodyget(link)
 		if err != nil {
+			time.Sleep(time.Minute)
 			log.Println("Error get page, try dirty hack slash adding:)")
 			body = ""
 			err = nil
@@ -69,6 +70,7 @@ func get(link string) (string, error) {
 		if err == nil {
 			break
 		}
+		time.Sleep(time.Minute)
 		log.Println("Error get page, try dirty hack host changing")
 		for _, a := range hosts {
 			regex := regexp.MustCompile("([a-z]+)://([a-z]+).([a-z]+)/")

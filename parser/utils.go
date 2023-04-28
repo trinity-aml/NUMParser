@@ -5,6 +5,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -23,14 +24,67 @@ func getHash(magnet string) string {
 	return strings.ToLower(magnet[:pos])
 }
 
+func replacer(source string) string {
+	regex := regexp.MustCompile("([a-z]+)://([a-z]+).([a-z]+)/")
+	out := regex.FindString(source) + "/"
+	link := regex.ReplaceAllString(source, out)
+	return link
+}
+
+func replacer2(source string, host string) string {
+	regex := regexp.MustCompile("([a-z]+)://([a-z]+).([a-z]+)/")
+	link := regex.ReplaceAllString(source, host)
+	return link
+}
+
+func bodyget(in string) (string, error) {
+	var str string
+	var err error
+	if strings.Contains(in, "rutor.lib") {
+		str, err = client.GetNic(in, "", "")
+	} else {
+		str, err = client.Get(in)
+	}
+	return str, err
+}
+
+var hosts = []string{
+	"http://rutor.info/",
+	"http://rutor.info//",
+	"http://rutor.is/",
+	"http://rutor.is//",
+	"http://6tor.org/",
+}
+
 func get(link string) (string, error) {
 	var body string
 	var err error
 	for i := 0; i < 10; i++ {
-		if strings.Contains(link, "rutor.lib") {
-			body, err = client.GetNic(link, "", "")
-		} else {
-			body, err = client.Get(link)
+		body, err = bodyget(link)
+		if err != nil {
+			log.Println("Error get page, try dirty hack slash adding:)")
+			body = ""
+			err = nil
+			link_hack := replacer(link)
+			body, err = bodyget(link_hack)
+		}
+		if err == nil {
+			break
+		}
+		log.Println("Error get page, try dirty hack host changing")
+		for _, a := range hosts {
+			regex := regexp.MustCompile("([a-z]+)://([a-z]+).([a-z]+)/")
+			out := regex.FindString(link)
+			out_a := out + "/"
+			if a != out && a != out_a {
+				body = ""
+				err = nil
+				link_hack := replacer2(link, a)
+				body, err = bodyget(link_hack)
+				if err == nil {
+					break
+				}
+			}
 		}
 		if err == nil {
 			break

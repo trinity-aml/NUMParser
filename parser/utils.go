@@ -50,9 +50,7 @@ func bodyget(in string) (string, error) {
 
 var hosts = []string{
 	"http://rutor.info/",
-	"http://rutor.info//",
 	"http://rutor.is/",
-	"http://rutor.is//",
 	"http://6tor.org/",
 }
 
@@ -75,8 +73,7 @@ func get(link string) (string, error) {
 		for _, a := range hosts {
 			regex := regexp.MustCompile("([a-z]+)://([a-z]+).([a-z]+)/")
 			out := regex.FindString(link)
-			out_a := out + "/"
-			if a != out && a != out_a {
+			if a != out {
 				body = ""
 				err = nil
 				link_hack := replacer2(link, a)
@@ -89,7 +86,7 @@ func get(link string) (string, error) {
 		if err == nil {
 			break
 		}
-		log.Println("Error get page,tryes:", i+1, link, err)
+		log.Println("Error get page, tries:", i+1, link, err)
 		if i < 5 {
 			time.Sleep(time.Minute)
 		} else {

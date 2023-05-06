@@ -1,11 +1,17 @@
 Usage:
 
-numParser-linux-amd64  [-p PORT]
+numParser-linux-amd64  [-p PORT] [--proxy http://user:password@ip:port]
 
 default PORT 38888
+default host http://rutor.info
 
-By default program use http://rutor.info host, possible to choose another one. You should put text file rutor_host.txt with host to the same folder with binary.
+Possible to change some setting with config file config.yml in the directory of numParser
 
-For example:
-http://rutor.is
-
+##### Exemple of config.yml (possible to put settings in any combinations)
+>
+>host: http://6tor.org
+>
+>port: 29999
+>
+>proxy: http://user:password@ip:port
+>

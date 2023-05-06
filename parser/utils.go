@@ -11,7 +11,6 @@ import (
 )
 
 func getHash(magnet string) string {
-	//magnet:?xt=urn:btih:1debb44e9e9ac785aaa4c26507534e1357672a22&dn=rutor.info&tr=udp://opentor.net:6969&tr=http://retracker.local/announce
 	pos := strings.Index(magnet, "btih:")
 	if pos == -1 {
 		return ""

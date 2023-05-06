@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"NUMParser/config"
 	"NUMParser/db"
 	"NUMParser/db/models"
 	"NUMParser/tasker"
@@ -8,8 +9,6 @@ import (
 	"bytes"
 	"github.com/PuerkitoBio/goquery"
 	"log"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,21 +16,12 @@ import (
 	"time"
 )
 
-func loadRutorHost() []string {
-	dir := filepath.Dir(os.Args[0])
-	name := filepath.Join(dir, "rutor_host.txt")
-	buf, err := os.ReadFile(name)
+func loadRutorHost() string {
+	ret, err := config.ReadConfigParser("Host")
 	if err == nil {
-		list := strings.Split(string(buf), "\n")
-		var ret []string
-		for _, l := range list {
-			if strings.HasPrefix(l, "http") {
-				ret = append(ret, strings.TrimSpace(l))
-			}
-		}
 		return ret
 	}
-	return nil
+	return ""
 }
 
 var (
@@ -60,14 +50,9 @@ type parseLink struct {
 func getHost() string {
 	mhost.Lock()
 	defer mhost.Unlock()
-	hosts := loadRutorHost()
-	if len(hosts) == 0 {
+	host := loadRutorHost()
+	if host == "" {
 		return "http://rutor.info"
-	}
-	host := hosts[hostsPos]
-	hostsPos++
-	if hostsPos >= len(hosts) {
-		hostsPos = 0
 	}
 	return host
 }

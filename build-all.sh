@@ -42,6 +42,8 @@ set_gomips() {
 GOBIN="go"
 
 $GOBIN version
+$GOBIN clean -i -r -cache #--modcache
+$GOBIN mod tidy
 
 LDFLAGS="'-s -w'"
 FAILURES=""

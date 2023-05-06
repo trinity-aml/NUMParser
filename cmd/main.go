@@ -37,7 +37,12 @@ func main() {
 	fmt.Println("numParser_"+version.Version+",", runtime.Version()+",", "CPU Num:", runtime.NumCPU())
 
 	if params.Port == "" {
-		params.Port = "38888"
+		port, err := config.ReadConfigParser("Port")
+		if err == nil {
+			params.Port = port
+		} else {
+			params.Port = "38888"
+		}
 	}
 
 	if params.Proxy != "" {
@@ -46,6 +51,17 @@ func main() {
 			log.Println("Error parse proxy host:", err)
 		} else {
 			config.ProxyHost = params.Proxy
+		}
+	} else {
+		proxy, err := config.ReadConfigParser("Proxy")
+		if err == nil {
+			params.Proxy = proxy
+			_, err := url.Parse(params.Proxy)
+			if err == nil {
+				config.ProxyHost = params.Proxy
+			} else {
+				log.Println("Error parse proxy host:", err)
+			}
 		}
 	}
 

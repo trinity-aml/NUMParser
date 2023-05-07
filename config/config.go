@@ -10,7 +10,7 @@ const ReleasesLimit = 0
 var ProxyHost = ""
 
 type ConfigParser struct {
-	Host  string `yaml:"host" env:"HOST_RUTOR" env-default:""`
+	Host  string `yaml:"host" env:"HOST_RUTOR" env-default:"http://rutor.info"`
 	Port  string `yaml:"port" env:"PORT_RUTOR" env-default:"38888"`
 	Proxy string `yaml:"proxy" env:"PROXY_RUTOR" env-default:""`
 }

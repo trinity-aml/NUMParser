@@ -1,13 +1,13 @@
 package tmdb
 
 import (
+	"NUMParser/config"
 	"NUMParser/db/models"
 	"NUMParser/db/tmdb"
 	"NUMParser/utils"
 	"github.com/jmcvetta/napping"
 	"log"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -26,13 +26,21 @@ var (
 func Init() {
 	log.Println("Init tmdb")
 
-	dir := filepath.Dir(os.Args[0])
-	buf, err := os.ReadFile(filepath.Join(dir, "tmdb.key"))
-	if err != nil || strings.TrimSpace(string(buf)) == "" {
+	//	dir := filepath.Dir(os.Args[0])
+	//	buf, err := os.ReadFile(filepath.Join(dir, "tmdb.key"))
+	//	if err != nil || strings.TrimSpace(string(buf)) == "" {
+	//		log.Println("Fatal error read tmdb auth key:", err)
+	//		os.Exit(1)
+	//	}
+	//	TMDBAuthKey = strings.TrimSpace(string(buf))
+
+	buf, err := config.ReadConfigParser("TmdbToken")
+	if err == nil && buf != "" {
+		TMDBAuthKey = strings.TrimSpace(buf)
+	} else {
 		log.Println("Fatal error read tmdb auth key:", err)
 		os.Exit(1)
 	}
-	TMDBAuthKey = strings.TrimSpace(string(buf))
 
 	lstmg := GetGenres("movie")
 	lsttvg := GetGenres("tv")

@@ -15,3 +15,4 @@ Possible to change some setting with config file config.yml in the directory of 
 >
 >proxy: http://user:password@ip:port
 >
+>tmdbtoken: 'Bearer [API Read Access Token]'

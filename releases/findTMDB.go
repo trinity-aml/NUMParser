@@ -1,8 +1,8 @@
 package releases
 
 import (
-	"NUMParser/db"
 	"NUMParser/db/models"
+	tmdb2 "NUMParser/db/tmdb"
 	"NUMParser/movies/tmdb"
 	"NUMParser/parser"
 	"NUMParser/utils"
@@ -17,10 +17,10 @@ import (
 func FillTMDB(label string, isMovie bool, torrs []*models.TorrentDetails) []*models.Entity {
 	list := make([]*models.Entity, len(torrs))
 	var mu sync.Mutex
-	utils.PForLim(torrs, 10, func(i int, t *models.TorrentDetails) {
+	utils.PForLim(torrs, 20, func(i int, t *models.TorrentDetails) {
 		//for i, t := range torrs {
 		var md *models.Entity
-		indx := db.GetIndex(t.Hash)
+		indx := tmdb2.GetIndex(t.Hash)
 		if indx != 0 {
 			md = tmdb.GetVideoDetails(isMovie, indx)
 			if md != nil {
@@ -43,13 +43,11 @@ func FillTMDB(label string, isMovie bool, torrs []*models.TorrentDetails) []*mod
 					mu.Unlock()
 				}
 			}
-			if md != nil {
-				db.SetIndex(t, md)
-			}
 		}
 		if md == nil {
 			log.Println(label+":", "Torr", i, "/", len(torrs), "not found in TMDB:", t.Title, t.Link)
 		} else {
+			tmdb2.SetIndex(t, md)
 			md.SetTorrent(t)
 			log.Println(label+":", "Find torr", i, "/", len(torrs), "in TMDB:", t.Title)
 		}

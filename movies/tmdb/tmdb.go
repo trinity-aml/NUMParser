@@ -1,14 +1,16 @@
 package tmdb
 
 import (
-	"NUMParser/db"
 	"NUMParser/db/models"
+	"NUMParser/db/tmdb"
 	"NUMParser/utils"
 	"github.com/jmcvetta/napping"
 	"log"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
-	"sync"
+	"strings"
 )
 
 const (
@@ -17,14 +19,21 @@ const (
 )
 
 var (
-	apiKey = "45ddf563ac3fb845f2d5c363190d1a33"
-	apiMu  sync.Mutex
-
-	genres []*models.Genre
+	genres      []*models.Genre
+	TMDBAuthKey string
 )
 
 func Init() {
 	log.Println("Init tmdb")
+
+	dir := filepath.Dir(os.Args[0])
+	buf, err := os.ReadFile(filepath.Join(dir, "tmdb.key"))
+	if err != nil || strings.TrimSpace(string(buf)) == "" {
+		log.Println("Fatal error read tmdb auth key:", err)
+		os.Exit(1)
+	}
+	TMDBAuthKey = strings.TrimSpace(string(buf))
+
 	lstmg := GetGenres("movie")
 	lsttvg := GetGenres("tv")
 
@@ -41,19 +50,18 @@ func Init() {
 }
 
 func GetVideoDetails(isMovie bool, id int64) *models.Entity {
-
-	ents := db.GetTMDBDetails()
-	for _, ent := range ents {
-		if isMovie && ent.MediaType == "movie" && ent.ID == id {
-			return ent
-		}
-		if !isMovie && ent.MediaType == "tv" && ent.ID == id {
-			return ent
-		}
+	var ent *models.Entity
+	if isMovie {
+		ent = tmdb.GetMovie(id)
+	} else {
+		ent = tmdb.GetTV(id)
+	}
+	if ent != nil {
+		return ent
 	}
 
 	params := map[string]string{}
-	params["api_key"] = apiKey
+	//params["api_key"] = apiKey
 
 	if _, ok := params["language"]; !ok {
 		params["language"] = "ru"
@@ -68,13 +76,6 @@ func GetVideoDetails(isMovie bool, id int64) *models.Entity {
 		endpoint = "tv/" + ids
 	}
 
-	pageParams := napping.Params{}
-	for k, v := range params {
-		pageParams[k] = v
-	}
-
-	var ent *models.Entity
-
 	err := readPageTmdb(endpoint, params, &ent)
 	if err != nil || ent == nil {
 		return nil
@@ -84,7 +85,7 @@ func GetVideoDetails(isMovie bool, id int64) *models.Entity {
 	titles := alternativeTitles(isMovie, id)
 	ent.Titles = titles
 
-	db.AddTMDB(ent)
+	tmdb.AddTMDB(ent)
 
 	return ent
 }
@@ -102,17 +103,13 @@ func Search(isMovie bool, query string) []*models.Entity {
 }
 
 func FindByID(isMovie bool, id string, idType string) *models.Entity {
-
-	list := db.GetTMDBDetails()
-	for _, e := range list {
-		if e.ImdbID == id {
-			return e
-		}
+	if ent := tmdb.FindIMDB(id); ent != nil {
+		return ent
 	}
 
 	params := napping.Params{}
 
-	params["api_key"] = apiKey
+	//params["api_key"] = apiKey
 	params["external_source"] = idType
 	params["language"] = "ru"
 
@@ -160,7 +157,7 @@ func Legends() []*models.Entity {
 
 func alternativeTitles(isMovie bool, id int64) []string {
 	params := napping.Params{}
-	params["api_key"] = apiKey
+	//params["api_key"] = apiKey
 
 	var st = "movie"
 	if !isMovie {
@@ -217,7 +214,7 @@ func listVideoPages(endpoint string, params napping.Params) []*models.Entity {
 }
 
 func listVideo(endpoint string, params napping.Params) ([]*models.Entity, int) {
-	params["api_key"] = apiKey
+	//params["api_key"] = apiKey
 
 	if _, ok := params["language"]; !ok {
 		params["language"] = "ru"

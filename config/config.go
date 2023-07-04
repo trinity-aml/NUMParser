@@ -8,6 +8,7 @@ const SaveReleasePath = "public/releases"
 const ReleasesLimit = 0
 
 var ProxyHost = ""
+var UseProxy = false
 
 type ConfigParser struct {
 	Host  string `yaml:"host" env:"HOST_RUTOR" env-default:"http://rutor.info"`

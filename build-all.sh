@@ -106,6 +106,18 @@ for V in "${COMPILERS[@]}"; do
 #  eval "$CMD"
 done
 
+#####################################
+### Windows build without GUI
+#####
+GOOS="windows"
+GOARCH="amd64"
+LDFLAGS="'-s -w -H=windowsgui'"
+BUILD_FLAGS="-ldflags=${LDFLAGS}"
+BIN_FILENAME="${OUTPUT}-${GOOS}-amd64-nogui.exe"
+CMD="GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+echo "${CMD}"
+eval "$CMD" || FAILURES="${FAILURES} windows/amd64 NOGUI"
+
 # eval errors
 if [[ "${FAILURES}" != "" ]]; then
   echo ""

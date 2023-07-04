@@ -2,7 +2,6 @@ package parser
 
 import (
 	"NUMParser/config"
-	"NUMParser/db"
 	"NUMParser/db/models"
 	"NUMParser/db/rutor"
 	"NUMParser/tasker"
@@ -10,8 +9,6 @@ import (
 	"bytes"
 	"github.com/PuerkitoBio/goquery"
 	"log"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"

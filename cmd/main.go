@@ -66,7 +66,16 @@ func main() {
 		}
 	}
 
-	config.UseProxy = params.UseProxy
+	if params.UseProxy == true {
+		config.UseProxy = params.UseProxy
+	} else {
+		use_proxy, err := config.ReadConfigParser("UseProxy")
+		if err == nil && use_proxy == "true" {
+			params.UseProxy = true
+		} else {
+			params.UseProxy = false
+		}
+	}
 
 	db.Init()
 	loadProxy()

@@ -13,6 +13,8 @@ Possible to change some setting with config file config.yml in the directory of 
 >
 >port: 29999
 >
+>useproxy: false
+>
 >proxy: http://user:password@ip:port
 >
 >tmdbtoken: 'Bearer [API Read Access Token]'

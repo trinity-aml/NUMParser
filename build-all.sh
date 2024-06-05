@@ -53,7 +53,7 @@ OUTPUT="${ROOT}/dist/numParser"
 #### Build server
 echo "Build"
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
-rm -f dist/*
+rm -f dist/numParser-*
 
 #####################################
 ### X86 build section
@@ -69,9 +69,9 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-#  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
-#  echo "compress with ${CMD}"
-#  eval "$CMD"
+  CMD="./upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  echo "compress with ${CMD}"
+  eval "$CMD"
 done
 
 #####################################
@@ -101,9 +101,9 @@ for V in "${COMPILERS[@]}"; do
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-#  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
-#  echo "compress with ${CMD}"
-#  eval "$CMD"
+  CMD="./upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  echo "compress with ${CMD}"
+  eval "$CMD"
 done
 
 #####################################
@@ -117,6 +117,9 @@ BIN_FILENAME="${OUTPUT}-${GOOS}-amd64-nogui.exe"
 CMD="GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
 echo "${CMD}"
 eval "$CMD" || FAILURES="${FAILURES} windows/amd64 NOGUI"
+CMD="./upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+echo "compress with ${CMD}"
+eval "$CMD"
 
 # eval errors
 if [[ "${FAILURES}" != "" ]]; then

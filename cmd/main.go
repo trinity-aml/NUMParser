@@ -9,10 +9,12 @@ import (
 	"NUMParser/releases"
 	"NUMParser/version"
 	"NUMParser/web"
+	"context"
 	"fmt"
 	"github.com/alexflint/go-arg"
 	"github.com/jasonlvhit/gocron"
 	"log"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -77,6 +79,8 @@ func main() {
 		}
 	}
 
+	dnsResolve()
+
 	db.Init()
 	loadProxy()
 	tmdb.Init()
@@ -93,6 +97,51 @@ func main() {
 	gocron.Every(1).Day().At("2:30").Do(scanMoviesYears)
 	<-gocron.Start()
 
+}
+
+func dnsResolve() {
+	hosts := [6]string{"1.1.1.1", "1.0.0.1", "208.67.222.222", "208.67.220.220", "8.8.8.8", "8.8.4.4"}
+	ret := 0
+	for _, ip := range hosts {
+		ret = toolResolve("www.google.com", ip)
+		switch {
+		case ret == 2:
+			fmt.Println("DNS resolver OK\n")
+		case ret == 1:
+			fmt.Println("New DNS resolver OK\n")
+		case ret == 0:
+			fmt.Println("New DNS resolver failed\n")
+		}
+		if ret == 2 || ret == 1 {
+			break
+		}
+	}
+}
+
+func toolResolve(host string, serverDNS string) int {
+	addrs, err := net.LookupHost(host)
+	addr_dns := fmt.Sprintf("%s:53", serverDNS)
+	a := 0
+	if len(addrs) == 0 {
+		fmt.Println("Check dns", addrs, err)
+		fn := func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{}
+			return d.DialContext(ctx, "udp", addr_dns)
+		}
+		net.DefaultResolver = &net.Resolver{
+			Dial: fn,
+		}
+		addrs, err = net.LookupHost(host)
+		fmt.Println("Check new dns", addrs, err)
+		if err == nil || len(addrs) > 0 {
+			a = 1
+		} else {
+			a = 0
+		}
+	} else {
+		a = 2
+	}
+	return a
 }
 
 func scanReleases() {

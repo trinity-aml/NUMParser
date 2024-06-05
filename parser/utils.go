@@ -13,6 +13,9 @@ func get(link string) (string, error) {
 	var body string
 	var err error
 	for i := 0; i < 10; i++ {
+		if strings.Contains(link, "\t") {
+			link = strings.Replace(link, "\t", "", -1)
+		}
 		if strings.Contains(link, "rutor.lib") {
 			body, err = client.GetNic(link, "", "")
 		} else {
@@ -25,7 +28,6 @@ func get(link string) (string, error) {
 		if err == nil || err == client.Err404 {
 			break
 		}
-
 		log.Println("Error get page,tryes:", i+1, link, err)
 		if i < 5 {
 			time.Sleep(time.Minute)

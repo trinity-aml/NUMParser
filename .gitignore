@@ -22,5 +22,5 @@ public/releases
 /build/
 .DS_Store
 db/numparser.db
-
+config.yml
 .idea/

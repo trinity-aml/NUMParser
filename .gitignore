@@ -24,3 +24,4 @@ public/releases
 db/numparser.db
 config.yml
 .idea/
+/numparser_macos

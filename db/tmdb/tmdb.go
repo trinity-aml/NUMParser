@@ -155,23 +155,23 @@ func GetAllMovies() []*models.Entity {
 }
 
 // GetAllMoviesRu возвращает только фильмы на русском языке
-func GetAllMoviesRu() []*models.Entity {
-	var movies []*models.Entity
-	db.DB.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("Movies"))
-		if bucket == nil {
-			return nil
-		}
-		return bucket.ForEach(func(_, v []byte) error {
-			var e *models.Entity
-			if err := json.Unmarshal(v, &e); err == nil && e != nil && e.OriginalLanguage == "ru" {
-				movies = append(movies, e)
-			}
-			return nil
-		})
-	})
-	return movies
-}
+// func GetAllMoviesRu() []*models.Entity {
+// 	var movies []*models.Entity
+// 	db.DB.View(func(tx *bolt.Tx) error {
+// 		bucket := tx.Bucket([]byte("Movies"))
+// 		if bucket == nil {
+// 			return nil
+// 		}
+// 		return bucket.ForEach(func(_, v []byte) error {
+// 			var e *models.Entity
+// 			if err := json.Unmarshal(v, &e); err == nil && e != nil && e.OriginalLanguage == "ru" {
+// 				movies = append(movies, e)
+// 			}
+// 			return nil
+// 		})
+// 	})
+// 	return movies
+// }
 
 func GetAllTV() []*models.Entity {
 	var tvs []*models.Entity
@@ -191,7 +191,68 @@ func GetAllTV() []*models.Entity {
 	return tvs
 }
 
-func GetReleaseQualityByTMDBID(tmdbID int64) string {
+//func GetReleaseQualityByTMDBID(tmdbID int64) string {
+//	var key string
+//	db.DB.View(func(tx *bolt.Tx) error {
+//		bucket := tx.Bucket([]byte("TMDB"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		bucket = bucket.Bucket([]byte("Index"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		c := bucket.Cursor()
+//		tmdbIDBytes := utils.I2B(tmdbID)
+//		for k, v := c.First(); k != nil; k, v = c.Next() {
+//			if bytes.Equal(v, tmdbIDBytes) {
+//				key = string(k)
+//				break
+//			}
+//		}
+//		return nil
+//	})
+//	if key == "" {
+//		return ""
+//	}
+//
+//	var videoQuality int
+//	db.DB.View(func(tx *bolt.Tx) error {
+//		bucket := tx.Bucket([]byte("Rutor"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		bucket = bucket.Bucket([]byte("Torrents"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		v := bucket.Get([]byte(key))
+//		if v == nil {
+//			return nil
+//		}
+//		var t struct {
+//			VideoQuality int `json:"VideoQuality"`
+//		}
+//		if err := json.Unmarshal(v, &t); err == nil {
+//			videoQuality = t.VideoQuality
+//		}
+//		return nil
+//	})
+//
+//	switch {
+//	case videoQuality >= 300:
+//		return "4K"
+//	case videoQuality >= 200:
+//		return "1080p"
+//	case videoQuality >= 100:
+//		return "720p"
+//	default:
+//		return "SD"
+//	}
+//}
+
+// Получить все данные торрента по TMDB ID
+func GetTorrentDetailsByTMDBID(tmdbID int64) *models.TorrentDetails {
 	var key string
 	db.DB.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("TMDB"))
@@ -213,10 +274,10 @@ func GetReleaseQualityByTMDBID(tmdbID int64) string {
 		return nil
 	})
 	if key == "" {
-		return ""
+		return nil
 	}
 
-	var videoQuality int
+	var details *models.TorrentDetails
 	db.DB.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("Rutor"))
 		if bucket == nil {
@@ -230,125 +291,115 @@ func GetReleaseQualityByTMDBID(tmdbID int64) string {
 		if v == nil {
 			return nil
 		}
-		var t struct {
-			VideoQuality int `json:"VideoQuality"`
-		}
+		var t models.TorrentDetails
 		if err := json.Unmarshal(v, &t); err == nil {
-			videoQuality = t.VideoQuality
+			details = &t
 		}
 		return nil
 	})
 
-	switch {
-	case videoQuality >= 300:
-		return "4K"
-	case videoQuality >= 200:
-		return "1080p"
-	case videoQuality >= 100:
-		return "720p"
-	default:
-		return "SD"
-	}
+	return details
 }
 
-func GetReleaseCategoriesByTMDBID(tmdbID int64) string {
-	var key string
-	db.DB.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("TMDB"))
-		if bucket == nil {
-			return nil
-		}
-		bucket = bucket.Bucket([]byte("Index"))
-		if bucket == nil {
-			return nil
-		}
-		c := bucket.Cursor()
-		tmdbIDBytes := utils.I2B(tmdbID)
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			if bytes.Equal(v, tmdbIDBytes) {
-				key = string(k)
-				break
-			}
-		}
-		return nil
-	})
-	if key == "" {
-		return ""
-	}
-
-	var categories string
-	db.DB.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("Rutor"))
-		if bucket == nil {
-			return nil
-		}
-		bucket = bucket.Bucket([]byte("Torrents"))
-		if bucket == nil {
-			return nil
-		}
-		v := bucket.Get([]byte(key))
-		if v == nil {
-			return nil
-		}
-		var t struct {
-			Categories string `json:"Categories"`
-		}
-		if err := json.Unmarshal(v, &t); err == nil {
-			categories = t.Categories
-		}
-		return nil
-	})
-
-	return categories
-}
-
-func GetReleaseCreateDateByTMDBID(tmdbID int64) time.Time {
-	var key string
-	db.DB.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("TMDB"))
-		if bucket == nil {
-			return nil
-		}
-		bucket = bucket.Bucket([]byte("Index"))
-		if bucket == nil {
-			return nil
-		}
-		c := bucket.Cursor()
-		tmdbIDBytes := utils.I2B(tmdbID)
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			if bytes.Equal(v, tmdbIDBytes) {
-				key = string(k)
-				break
-			}
-		}
-		return nil
-	})
-	if key == "" {
-		return time.Time{}
-	}
-
-	var createDate time.Time
-	db.DB.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("Rutor"))
-		if bucket == nil {
-			return nil
-		}
-		bucket = bucket.Bucket([]byte("Torrents"))
-		if bucket == nil {
-			return nil
-		}
-		v := bucket.Get([]byte(key))
-		if v == nil {
-			return nil
-		}
-		var t struct {
-			CreateDate time.Time `json:"CreateDate"`
-		}
-		if err := json.Unmarshal(v, &t); err == nil {
-			createDate = t.CreateDate
-		}
-		return nil
-	})
-
-	return createDate
-}
+//func GetReleaseCategoriesByTMDBID(tmdbID int64) string {
+//	var key string
+//	db.DB.View(func(tx *bolt.Tx) error {
+//		bucket := tx.Bucket([]byte("TMDB"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		bucket = bucket.Bucket([]byte("Index"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		c := bucket.Cursor()
+//		tmdbIDBytes := utils.I2B(tmdbID)
+//		for k, v := c.First(); k != nil; k, v = c.Next() {
+//			if bytes.Equal(v, tmdbIDBytes) {
+//				key = string(k)
+//				break
+//			}
+//		}
+//		return nil
+//	})
+//	if key == "" {
+//		return ""
+//	}
+//
+//	var categories string
+//	db.DB.View(func(tx *bolt.Tx) error {
+//		bucket := tx.Bucket([]byte("Rutor"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		bucket = bucket.Bucket([]byte("Torrents"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		v := bucket.Get([]byte(key))
+//		if v == nil {
+//			return nil
+//		}
+//		var t struct {
+//			Categories string `json:"Categories"`
+//		}
+//		if err := json.Unmarshal(v, &t); err == nil {
+//			categories = t.Categories
+//		}
+//		return nil
+//	})
+//
+//	return categories
+//}
+//
+//func GetReleaseCreateDateByTMDBID(tmdbID int64) time.Time {
+//	var key string
+//	db.DB.View(func(tx *bolt.Tx) error {
+//		bucket := tx.Bucket([]byte("TMDB"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		bucket = bucket.Bucket([]byte("Index"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		c := bucket.Cursor()
+//		tmdbIDBytes := utils.I2B(tmdbID)
+//		for k, v := c.First(); k != nil; k, v = c.Next() {
+//			if bytes.Equal(v, tmdbIDBytes) {
+//				key = string(k)
+//				break
+//			}
+//		}
+//		return nil
+//	})
+//	if key == "" {
+//		return time.Time{}
+//	}
+//
+//	var createDate time.Time
+//	db.DB.View(func(tx *bolt.Tx) error {
+//		bucket := tx.Bucket([]byte("Rutor"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		bucket = bucket.Bucket([]byte("Torrents"))
+//		if bucket == nil {
+//			return nil
+//		}
+//		v := bucket.Get([]byte(key))
+//		if v == nil {
+//			return nil
+//		}
+//		var t struct {
+//			CreateDate time.Time `json:"CreateDate"`
+//		}
+//		if err := json.Unmarshal(v, &t); err == nil {
+//			createDate = t.CreateDate
+//		}
+//		return nil
+//	})
+//
+//	return createDate
+//}
+//

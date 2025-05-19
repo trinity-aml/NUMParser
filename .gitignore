@@ -25,3 +25,5 @@ db/numparser.db
 config.yml
 .idea/
 /numparser_macos
+/NUMParser_deb
+/.env

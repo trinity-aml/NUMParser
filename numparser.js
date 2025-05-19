@@ -1,9 +1,10 @@
 (function () {
     var SOURCE_NAME = 'NUMParser';
-    var BASE_URL = 'http://192.168.88.9:38888/api/lampac';
+    var BASE_URL = 'http://localhost:38888/api/lampac';
 
     var CATEGORIES = {
         k4: '4k',
+        k4_new: '4k_new',
         movies_new: "movies_new",
         movies: 'movies',
         russian_new_movies: 'movies_ru_new',
@@ -92,7 +93,7 @@
 
             var partsData = [
                 function (callback) {
-                    makeRequest(CATEGORIES.k4, 'В высоком качестве', callback);
+                    makeRequest(CATEGORIES.k4_new, 'В высоком качестве (новые)', callback);
                 },
                 function (callback) {
                     makeRequest(CATEGORIES.movies_new, 'Новые фильмы', callback);
@@ -105,6 +106,9 @@
                 },
                 function (callback) {
                     makeRequest(CATEGORIES.russian_movies, 'Русские фильмы', callback);
+                },
+                function (callback) {
+                    makeRequest(CATEGORIES.k4, 'В высоком качестве', callback);
                 },
                 function (callback) {
                     makeRequest(CATEGORIES.all_tv, 'Сериалы', callback);

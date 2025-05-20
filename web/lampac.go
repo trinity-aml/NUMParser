@@ -16,21 +16,25 @@ var (
 	route        *gin.Engine
 	cachedMovies struct {
 		sync.RWMutex
-		movies4kNew        []*models.Entity
-		movies4k           []*models.Entity
-		moviesNew          []*models.Entity
-		movies             []*models.Entity
-		moviesRuNew        []*models.Entity
-		moviesRu           []*models.Entity
-		tvShowNew          []*models.Entity
-		tvShow             []*models.Entity
-		tvShowRuNew        []*models.Entity
-		tvShowRu           []*models.Entity
-		cartoonMovies      []*models.Entity
-		cartoonMoviesNew   []*models.Entity
-		cartoonMoviesRu    []*models.Entity
-		cartoonMoviesRuNew []*models.Entity
-		lastUpdate         time.Time
+		movies4kNew      []*models.Entity
+		movies4k         []*models.Entity
+		moviesNew        []*models.Entity
+		movies           []*models.Entity
+		moviesRuNew      []*models.Entity
+		moviesRu         []*models.Entity
+		tvShowNew        []*models.Entity
+		tvShow           []*models.Entity
+		allTVShows       []*models.Entity
+		tvShowRuNew      []*models.Entity
+		tvShowRu         []*models.Entity
+		allTVShowsRu     []*models.Entity
+		cartoonMovies    []*models.Entity
+		cartoonMoviesNew []*models.Entity
+		allCartoonMovies []*models.Entity
+		cartoonSeries    []*models.Entity
+		cartoonSeriesNew []*models.Entity
+		allCartoonSeries []*models.Entity
+		lastUpdate       time.Time
 	}
 	cacheDuration = 5 * time.Minute
 )
@@ -41,15 +45,15 @@ func updateMoviesCache() {
 	movieEntities := tmdb.GetAllMovies()
 	tvEntities := tmdb.GetAllTV()
 
-	// Фильтруем данные по категориям
-	moviesRuNew, moviesRu := filterEntitiesByCategory(movieEntities, []string{models.CatMovie}, "ru", 2, 200, false)
-	moviesNew, movies := filterEntitiesByCategory(movieEntities, []string{models.CatMovie}, "notru", 2, 200, false)
-	tvShowRuNew, tvShowRu := filterEntitiesByCategory(tvEntities, []string{models.CatSeries}, "ru", 2, 200, false)
-	tvShowNew, tvShow := filterEntitiesByCategory(tvEntities, []string{models.CatSeries}, "notru", 2, 200, false)
-	cartoonMoviesNew, cartoonMovies := filterEntitiesByCategory(movieEntities, []string{models.CatCartoonMovie}, "all", 2, 200, false)
-	cartoonSeriesNew, cartoonSeries := filterEntitiesByCategory(tvEntities, []string{models.CatCartoonSeries}, "all", 2, 200, false)
-	//animeNew, anime := filterEntitiesByCategory(movieEntities, []string{models.CatAnime}, "all", 2, 200, false)
-	movies4kNew, movies4k := filterEntitiesByCategory(movieEntities, []string{models.CatMovie}, "all", 4, 300, true)
+	// // Фильтруем данные по категориям
+	moviesRuNew, moviesRu := filterEntitiesByCategory(movieEntities, []string{models.CatMovie}, "ru", 2, 200, "hd")
+	moviesNew, movies := filterEntitiesByCategory(movieEntities, []string{models.CatMovie}, "notru", 2, 200, "hd")
+	tvShowRuNew, tvShowRu := filterEntitiesByCategory(tvEntities, []string{models.CatSeries}, "ru", 2, 200, "all")
+	tvShowNew, tvShow := filterEntitiesByCategory(tvEntities, []string{models.CatSeries}, "notru", 2, 200, "all")
+	cartoonMoviesNew, cartoonMovies := filterEntitiesByCategory(movieEntities, []string{models.CatCartoonMovie}, "all", 2, 200, "all")
+	cartoonSeriesNew, cartoonSeries := filterEntitiesByCategory(tvEntities, []string{models.CatCartoonSeries}, "all", 2, 200, "all")
+	//animeNew, anime := filterEntitiesByCategory(movieEntities, []string{models.CatAnime}, "all", 2, 200, "all")
+	movies4kNew, movies4k := filterEntitiesByCategory(movieEntities, []string{models.CatMovie}, "all", 4, 300, "4k")
 	sortEntities := func(entities []*models.Entity) {
 		sort.Slice(entities, func(i, j int) bool {
 			ti := entities[i].GetTorrent()
@@ -68,12 +72,6 @@ func updateMoviesCache() {
 			}
 			return ti.CreateDate.After(tj.CreateDate)
 		})
-		// sort.Slice(entities, func(i, j int) bool {
-		// 	if entities[i].GetTorrent().CreateDate.Equal(entities[j].GetTorrent().CreateDate) {
-		// 		return entities[i].GetTorrent().VideoQuality > entities[j].GetTorrent().VideoQuality
-		// 	}
-		// 	return entities[i].GetTorrent().CreateDate.After(entities[j].GetTorrent().CreateDate)
-		// })
 	}
 
 	// Функция сортировки по дате релиза
@@ -129,6 +127,23 @@ func updateMoviesCache() {
 	sortReleaseDate(cartoonMovies)
 	sortReleaseDate(cartoonSeries)
 
+	// Объединение списков
+	allTVShows := make([]*models.Entity, 0, len(tvShowNew)+len(tvShow))
+	allTVShows = append(allTVShows, tvShowNew...)
+	allTVShows = append(allTVShows, tvShow...)
+
+	allTVShowsRu := make([]*models.Entity, 0, len(tvShowRuNew)+len(tvShowRu))
+	allTVShowsRu = append(allTVShowsRu, tvShowRuNew...)
+	allTVShowsRu = append(allTVShowsRu, tvShowRu...)
+
+	allCartoonMovies := make([]*models.Entity, 0, len(cartoonMoviesNew)+len(cartoonMovies))
+	allCartoonMovies = append(allCartoonMovies, cartoonMoviesNew...)
+	allCartoonMovies = append(allCartoonMovies, cartoonMovies...)
+
+	allCartoonSeries := make([]*models.Entity, 0, len(cartoonSeriesNew)+len(cartoonSeries))
+	allCartoonSeries = append(allCartoonSeries, cartoonSeriesNew...)
+	allCartoonSeries = append(allCartoonSeries, cartoonSeries...)
+
 	// Блокируем и обновляем кэш
 	cachedMovies.Lock()
 	defer cachedMovies.Unlock()
@@ -141,33 +156,41 @@ func updateMoviesCache() {
 	cachedMovies.moviesRuNew = moviesRuNew
 	cachedMovies.moviesRu = moviesRu
 	cachedMovies.tvShowRu = tvShowRu
-	cachedMovies.tvShowNew = tvShowRuNew
+	cachedMovies.tvShowRuNew = tvShowRuNew
+	cachedMovies.allTVShowsRu = allTVShowsRu
 	cachedMovies.tvShow = tvShow
 	cachedMovies.tvShowNew = tvShowNew
+	cachedMovies.allTVShows = allTVShows
 	cachedMovies.cartoonMoviesNew = cartoonMoviesNew
 	cachedMovies.cartoonMovies = cartoonMovies
-	cachedMovies.cartoonMoviesRuNew = cartoonSeriesNew
-	cachedMovies.cartoonMoviesRu = cartoonSeries
+	cachedMovies.allCartoonMovies = allCartoonMovies
+	cachedMovies.cartoonSeriesNew = cartoonSeriesNew
+	cachedMovies.cartoonSeries = cartoonSeries
+	cachedMovies.allCartoonSeries = allCartoonSeries
 	cachedMovies.lastUpdate = time.Now()
 }
 
 // Добавляем тип для возврата всех категорий
 type CachedMoviesResponse struct {
-	Movies4k           []*models.Entity
-	Movies4kNew        []*models.Entity
-	MoviesNew          []*models.Entity
-	Movies             []*models.Entity
-	MoviesRuNew        []*models.Entity
-	MoviesRu           []*models.Entity
-	TVShowNew          []*models.Entity
-	TVShow             []*models.Entity
-	TVShowRuNew        []*models.Entity
-	TVShowRu           []*models.Entity
-	CartoonMovies      []*models.Entity
-	CartoonMoviesRu    []*models.Entity
-	CartoonMoviesNew   []*models.Entity
-	CartoonMoviesRuNew []*models.Entity
-	LastUpdate         time.Time
+	Movies4k         []*models.Entity
+	Movies4kNew      []*models.Entity
+	MoviesNew        []*models.Entity
+	Movies           []*models.Entity
+	MoviesRuNew      []*models.Entity
+	MoviesRu         []*models.Entity
+	TVShowNew        []*models.Entity
+	TVShow           []*models.Entity
+	AllTVShows       []*models.Entity
+	TVShowRuNew      []*models.Entity
+	TVShowRu         []*models.Entity
+	AllTVShowsRu     []*models.Entity
+	CartoonMovies    []*models.Entity
+	CartoonMoviesNew []*models.Entity
+	AllCartoonMovies []*models.Entity
+	CartoonSeries    []*models.Entity
+	CartoonSeriesNew []*models.Entity
+	AllCartoonSeries []*models.Entity
+	LastUpdate       time.Time
 }
 
 // Получаем все категории фильмов
@@ -181,21 +204,25 @@ func GetCachedMovies() CachedMoviesResponse {
 	}
 
 	return CachedMoviesResponse{
-		Movies4k:           cachedMovies.movies4k,
-		Movies4kNew:        cachedMovies.movies4kNew,
-		MoviesNew:          cachedMovies.moviesNew,
-		Movies:             cachedMovies.movies,
-		MoviesRuNew:        cachedMovies.moviesRuNew,
-		MoviesRu:           cachedMovies.moviesRu,
-		TVShowNew:          cachedMovies.tvShowNew,
-		TVShow:             cachedMovies.tvShow,
-		TVShowRuNew:        cachedMovies.tvShowRuNew,
-		TVShowRu:           cachedMovies.tvShowRu,
-		CartoonMovies:      cachedMovies.cartoonMovies,
-		CartoonMoviesRu:    cachedMovies.cartoonMoviesRu,
-		CartoonMoviesNew:   cachedMovies.cartoonMoviesNew,
-		CartoonMoviesRuNew: cachedMovies.cartoonMoviesRuNew,
-		LastUpdate:         cachedMovies.lastUpdate,
+		Movies4k:         cachedMovies.movies4k,
+		Movies4kNew:      cachedMovies.movies4kNew,
+		MoviesNew:        cachedMovies.moviesNew,
+		Movies:           cachedMovies.movies,
+		MoviesRuNew:      cachedMovies.moviesRuNew,
+		MoviesRu:         cachedMovies.moviesRu,
+		TVShowNew:        cachedMovies.tvShowNew,
+		TVShow:           cachedMovies.tvShow,
+		AllTVShows:       cachedMovies.allTVShows,
+		TVShowRuNew:      cachedMovies.tvShowRuNew,
+		TVShowRu:         cachedMovies.tvShowRu,
+		AllTVShowsRu:     cachedMovies.allTVShowsRu,
+		CartoonMovies:    cachedMovies.cartoonMovies,
+		CartoonMoviesNew: cachedMovies.cartoonMoviesNew,
+		AllCartoonMovies: cachedMovies.allCartoonMovies,
+		CartoonSeries:    cachedMovies.cartoonSeries,
+		CartoonSeriesNew: cachedMovies.cartoonSeriesNew,
+		AllCartoonSeries: cachedMovies.allCartoonSeries,
+		LastUpdate:       cachedMovies.lastUpdate,
 	}
 }
 
@@ -205,56 +232,66 @@ func filterEntitiesByCategory(
 	langMode string, // "split", "all", "ru", "notru"
 	yearDelta int,
 	minQuality int,
-	is4KFilter bool, // true - фильтруем 4K, false - обычные фильмы
+	qualityMode string, // "4k", "hd", "all"
 ) (newList, allList []*models.Entity) {
 	categorySet := make(map[string]struct{})
 	for _, cat := range categories {
 		categorySet[cat] = struct{}{}
 	}
+
 	for _, m := range entities {
 		torr := tmdb.GetTorrentDetailsByTMDBID(m.ID)
-		if torr != nil {
-			m.SetTorrent(torr)
+		if torr == nil {
+			continue
 		}
-		if m.GetTorrent() != nil {
-			if _, ok := categorySet[torr.Categories]; ok {
-				isRu := m.OriginalLanguage == "ru"
-				// Логика по языку
-				use := false
-				switch langMode {
-				case "split":
-					// split не используется напрямую, см. ниже
-				case "all":
-					use = true
-				case "ru":
-					use = isRu
-				case "notru":
-					use = !isRu
-				}
-				if use || langMode == "all" {
-					is4K := torr.VideoQuality >= 300
+		m.SetTorrent(torr)
 
-					// Если запросили 4K - обрабатываем только 4K
-					if is4KFilter && is4K {
-						if utils.Abs(torr.Year-time.Now().Year()) < yearDelta {
-							newList = append(newList, m) // movies4kNew
-						} else {
-							allList = append(allList, m) // movies4k
-						}
-					}
+		if _, ok := categorySet[torr.Categories]; !ok {
+			continue
+		}
 
-					// Если запросили обычные - обрабатываем только обычные
-					if !is4KFilter && !is4K {
-						if utils.Abs(torr.Year-time.Now().Year()) < yearDelta && torr.VideoQuality >= minQuality {
-							newList = append(newList, m) // moviesNew
-						} else if torr.VideoQuality >= minQuality {
-							allList = append(allList, m) // movies
-						}
-					}
-				}
-			}
+		isRu := m.OriginalLanguage == "ru"
+		use := false
+		switch langMode {
+		case "split":
+			use = true
+		case "all":
+			use = true
+		case "ru":
+			use = isRu
+		case "notru":
+			use = !isRu
+		}
+
+		if !use {
+			continue
+		}
+
+		// Проверяем качество в зависимости от режима
+		qualityOK := false
+		switch qualityMode {
+		case "4k":
+			qualityOK = torr.VideoQuality >= 300 // 4K
+		case "hd":
+			qualityOK = torr.VideoQuality >= minQuality && torr.VideoQuality < 300 // HD
+		case "all":
+			qualityOK = torr.VideoQuality >= minQuality // Все что выше minQuality
+		}
+
+		if !qualityOK {
+			continue
+		}
+
+		// Проверяем год
+		yearOK := utils.Abs(torr.Year-time.Now().Year()) < yearDelta
+
+		if yearOK {
+			newList = append(newList, m)
+		} else {
+			allList = append(allList, m)
 		}
 	}
+
 	return
 }
 
@@ -337,7 +374,7 @@ func InitLampacRoutes(r *gin.RouterGroup) {
 
 		page := getPageParam(c)
 		cached := GetCachedMovies()
-		sendMoviesResponse(c, cached.CartoonMoviesNew, page)
+		sendMoviesResponse(c, cached.AllCartoonMovies, page)
 	})
 
 	// Мультсериалы (только сериалы)
@@ -348,7 +385,7 @@ func InitLampacRoutes(r *gin.RouterGroup) {
 
 		page := getPageParam(c)
 		cached := GetCachedMovies()
-		sendMoviesResponse(c, cached.CartoonMoviesRuNew, page)
+		sendMoviesResponse(c, cached.AllCartoonSeries, page)
 	})
 
 	// Сериалы (без мультсериалов)
@@ -359,7 +396,7 @@ func InitLampacRoutes(r *gin.RouterGroup) {
 
 		page := getPageParam(c)
 		cached := GetCachedMovies()
-		sendMoviesResponse(c, cached.TVShowNew, page)
+		sendMoviesResponse(c, cached.AllTVShows, page)
 	})
 
 	// Русские сериалы (без мультсериалов)
@@ -370,7 +407,7 @@ func InitLampacRoutes(r *gin.RouterGroup) {
 
 		page := getPageParam(c)
 		cached := GetCachedMovies()
-		sendMoviesResponse(c, cached.TVShowRu, page)
+		sendMoviesResponse(c, cached.AllTVShowsRu, page)
 	})
 
 }

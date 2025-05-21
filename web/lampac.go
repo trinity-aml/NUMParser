@@ -36,10 +36,10 @@ var (
 		allCartoonSeries []*models.Entity
 		lastUpdate       time.Time
 	}
-	cacheDuration = 5 * time.Minute
+	// cacheDuration = 5 * time.Minute
 )
 
-func updateMoviesCache() {
+func UpdateMoviesCache() {
 
 	// Получаем все данные
 	movieEntities := tmdb.GetAllMovies()
@@ -144,6 +144,8 @@ func updateMoviesCache() {
 	allCartoonSeries = append(allCartoonSeries, cartoonSeriesNew...)
 	allCartoonSeries = append(allCartoonSeries, cartoonSeries...)
 
+	utils.FreeOSMemGC()
+
 	// Блокируем и обновляем кэш
 	cachedMovies.Lock()
 	defer cachedMovies.Unlock()
@@ -197,11 +199,6 @@ type CachedMoviesResponse struct {
 func GetCachedMovies() CachedMoviesResponse {
 	cachedMovies.RLock()
 	defer cachedMovies.RUnlock()
-
-	// Если кэш устарел, обновляем в фоне
-	if time.Since(cachedMovies.lastUpdate) > cacheDuration {
-		go updateMoviesCache()
-	}
 
 	return CachedMoviesResponse{
 		Movies4k:         cachedMovies.movies4k,
@@ -297,8 +294,8 @@ func filterEntitiesByCategory(
 
 func InitLampacRoutes(r *gin.RouterGroup) {
 
-	// Инициализация кэша при старте
-	updateMoviesCache()
+	UpdateMoviesCache()
+	// utils.FreeOSMemGC() // Освобождаем память после инициализаци
 
 	// Фильмы в высоком качестве новинки
 	r.GET("/4k_new", func(c *gin.Context) {

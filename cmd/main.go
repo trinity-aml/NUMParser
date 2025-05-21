@@ -160,6 +160,9 @@ func scanReleases() {
 	releases.GetNewAnime()
 	db.SaveAll()
 	copySH()
+
+	// Обновляем кеш после обновления БД
+	web.UpdateMoviesCache()
 }
 
 func scanMoviesYears() {
@@ -170,6 +173,9 @@ func scanMoviesYears() {
 	}
 	db.SaveAll()
 	copySH()
+
+	// Обновляем кеш после обновления БД
+	web.UpdateMoviesCache()
 }
 
 // Exec script for copy any files

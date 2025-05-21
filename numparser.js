@@ -102,15 +102,6 @@
                     makeRequest(CATEGORIES.russian_new_movies, 'Новые русские фильмы', callback);
                 },
                 function (callback) {
-                    makeRequest(CATEGORIES.movies, Lampa.Lang.translate('menu_movies'), callback);
-                },
-                function (callback) {
-                    makeRequest(CATEGORIES.russian_movies, 'Русские фильмы', callback);
-                },
-                function (callback) {
-                    makeRequest(CATEGORIES.k4, 'В высоком качестве', callback);
-                },
-                function (callback) {
                     makeRequest(CATEGORIES.all_tv, 'Сериалы', callback);
                 },
                 function (callback) {
@@ -118,6 +109,15 @@
                 },
                 function (callback) {
                     makeRequest(CATEGORIES.cartoons, 'Мультфильмы', callback);
+                },
+                function (callback) {
+                    makeRequest(CATEGORIES.k4, 'В высоком качестве', callback);
+                },
+                function (callback) {
+                    makeRequest(CATEGORIES.movies, Lampa.Lang.translate('menu_movies'), callback);
+                },
+                function (callback) {
+                    makeRequest(CATEGORIES.russian_movies, 'Русские фильмы', callback);
                 },
                 function (callback) {
                     makeRequest(CATEGORIES.cartoons_tv, 'Мультсериалы', callback);

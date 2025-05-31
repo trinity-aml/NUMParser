@@ -28,6 +28,7 @@
                         name: item.name || item.title,
                         original_name: item.original_name || item.original_title || item.name || 'Unknown',
                         number_of_seasons: item.number_of_seasons,
+                        last_episode_to_air: item.last_episode_to_air,
                         seasons: item.seasons,
                         first_air_date: item.first_air_date,
                         release_date: item.release_date,
@@ -40,7 +41,6 @@
                         source: SOURCE_NAME,
                         release_quality: item.release_quality || '',
                         original_language: item.original_language || 'en',
-                        media_type: item.media_type || 'movie',
                         update_date: item.update_date || ''
                     }
                 }),

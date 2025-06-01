@@ -1,9 +1,15 @@
 package web
 
 import (
+	"NUMParser/config"
 	"NUMParser/db/models"
 	"NUMParser/db/tmdb"
 	"NUMParser/utils"
+	"compress/gzip"
+	"encoding/json"
+	"log"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"sync"
@@ -38,6 +44,39 @@ var (
 	}
 	// cacheDuration = 5 * time.Minute
 )
+
+// SaveLampacData сохраняет данные в файл с префиксом lampac_
+func SaveLampacData(baseName string, data interface{}) {
+	// Формируем полное имя файла
+	filename := "lampac_" + baseName + ".json"
+	fullPath := filepath.Join(config.SaveReleasePath, filename)
+
+	// Создаем директорию
+	if err := os.MkdirAll(config.SaveReleasePath, 0777); err != nil {
+		log.Printf("Ошибка создания директории: %v", err)
+		return
+	}
+
+	// Создаем файл
+	file, err := os.Create(fullPath)
+	if err != nil {
+		log.Printf("Ошибка создания файла: %v", err)
+		return
+	}
+	defer file.Close()
+
+	// Сжимаем в GZIP
+	gz := gzip.NewWriter(file)
+	defer gz.Close()
+
+	// Кодируем в JSON
+	if err := json.NewEncoder(gz).Encode(data); err != nil {
+		log.Printf("Ошибка кодирования JSON: %v", err)
+		return
+	}
+
+	log.Printf("Сохранено: %s", fullPath)
+}
 
 func UpdateMoviesCache() {
 
@@ -145,6 +184,28 @@ func UpdateMoviesCache() {
 	allCartoonSeries = append(allCartoonSeries, cartoonSeries...)
 
 	utils.FreeOSMemGC()
+
+	// Сохраняем ВСЕ категории
+	SaveLampacData("movies_ru_new", moviesRuNew)
+	SaveLampacData("movies_ru", moviesRu)
+	SaveLampacData("movies_new", moviesNew)
+	SaveLampacData("movies", movies)
+	SaveLampacData("tv_ru_new", tvShowRuNew)
+	SaveLampacData("tv_ru", tvShowRu)
+	SaveLampacData("tv_new", tvShowNew)
+	SaveLampacData("tv", tvShow)
+	SaveLampacData("cartoon_movies_new", cartoonMoviesNew)
+	SaveLampacData("cartoon_movies", cartoonMovies)
+	SaveLampacData("cartoon_series_new", cartoonSeriesNew)
+	SaveLampacData("cartoon_series", cartoonSeries)
+	//SaveLampacData("anime_new", animeNew)
+	//SaveLampacData("anime", anime)
+	SaveLampacData("movies_4k_new", movies4kNew)
+	SaveLampacData("movies_4k", movies4k)
+	SaveLampacData("all_tv_shows", allTVShows)
+	SaveLampacData("all_tv_shows_ru", allTVShowsRu)
+	SaveLampacData("all_cartoon_movies", allCartoonMovies)
+	SaveLampacData("all_cartoon_series", allCartoonSeries)
 
 	// Блокируем и обновляем кэш
 	cachedMovies.Lock()

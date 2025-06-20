@@ -60,25 +60,34 @@
         function normalizeData(json) {
             return {
                 results: (json.results || []).map(function (item) {
-                     return {
+                    var dataItem = {
                         id: item.id,
-                        name: item.name || item.title,
-                        number_of_seasons: item.number_of_seasons,
-                        last_episode_to_air: item.last_episode_to_air,
-                        seasons: item.seasons,
-                        first_air_date: item.first_air_date,
-                        release_date: item.release_date,
-                        poster_path: item.poster_path || item.poster || item.img || '',
+                        poster_path: item.poster_path || item.poster || '',
+                        img: item.img,
                         overview: item.overview || item.description || '',
                         vote_average: item.vote_average || 0,
-                        vote_count: item.vote_count || 0,
                         backdrop_path: item.backdrop_path || item.backdrop || '',
-                        still_path: item.still_path || '',
-                        source: SOURCE_NAME,
-                        release_quality: item.release_quality || '',
-                        original_language: item.original_language || 'en',
-                        update_date: item.update_date || ''
-                    }
+                        background_image: item.background_image,
+                        source: SOURCE_NAME
+                    };
+
+                    if (!!item.release_quality) dataItem.release_quality = item.release_quality;
+
+                    if (!!item.name) dataItem.name = item.name;
+                    if (!!item.title) dataItem.title = item.title;
+                    if (!!item.original_name) dataItem.original_name = item.original_name;
+                    if (!!item.original_title) dataItem.original_title = item.original_title;
+
+                    if (!!item.release_date) dataItem.release_date = item.release_date;
+                    if (!!item.first_air_date) dataItem.first_air_date = item.first_air_date;
+                    if (!!item.number_of_seasons) dataItem.number_of_seasons = item.number_of_seasons;
+                    if (!!item.last_air_date) dataItem.last_air_date = item.last_air_date;
+                    if (!!item.last_episode_to_air) dataItem.last_episode_to_air = item.last_episode_to_air;
+
+                    dataItem.promo_title = dataItem.name || dataItem.title || dataItem.original_name || dataItem.original_title;
+                    dataItem.promo = dataItem.overview;
+
+                    return dataItem;
                 }),
                 page: json.page || 1,
                 total_pages: json.total_pages || json.pagesCount || 1,

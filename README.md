@@ -29,11 +29,11 @@ go build -o NUMParser_deb ./cmd
 ##### Установка
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Igorek1986/NUMParser/refs/heads/lampac/install-numparser.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/Igorek1986/NUMParser/refs/heads/main/install-numparser.sh)
 ```
 
 ##### Удаление
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Igorek1986/NUMParser/refs/heads/lampac/uninstall-numparser.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/Igorek1986/NUMParser/refs/heads/main/uninstall-numparser.sh)
 ```

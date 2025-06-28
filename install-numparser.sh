@@ -200,7 +200,7 @@ function install_movies_api {
     echo -e "${YELLOW}movies-api is not installed. Would you like to install it now?${NC}"
     if confirm "Install movies-api? (Y/n) " "y"; then
         echo -e "${YELLOW}Installing movies-api...${NC}"
-        curl https://raw.githubusercontent.com/Igorek1986/movies-api/refs/heads/main/scripts/install-movies-api.sh | bash || error_exit "Failed to install movies-api"
+        bash <(curl -fsSL https://raw.githubusercontent.com/Igorek1986/movies-api/main/scripts/install-movies-api.sh) || error_exit "Failed to install movies-api"
     fi
 }
 
@@ -213,7 +213,7 @@ function update_movies_api_config {
         local movies_api_env="$USER_HOME/movies-api/.env"
         if [ -f "$movies_api_env" ]; then
             local current_releases=$(grep -oP "^RELEASES_DIR='?\K[^']*" "$movies_api_env" 2>/dev/null)
-            local new_releases="NUMParser/public/releases/"
+            local new_releases="${PROJECT_DIR}/public/releases/"
 
             if [[ "$current_releases" != "$new_releases" ]]; then
                 echo -e "${YELLOW}Current releases directory in movies-api: ${current_releases}${NC}"

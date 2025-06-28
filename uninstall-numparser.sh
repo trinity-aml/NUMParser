@@ -11,6 +11,7 @@ PROJECT_DIR="$USER_HOME/NUMParser"
 SERVICE_NAME="numparser"
 GO_PATH="/usr/local/go"
 GO_IN_SHELL_CONFIG_LINE='export PATH=$PATH:/usr/local/go/bin'
+NEED_RELOAD=false
 
 function confirm {
     local prompt="$1"
@@ -20,6 +21,18 @@ function confirm {
         [Yy]*) return 0 ;;
         *) return 1 ;;
     esac
+}
+
+function reload_shell {
+    echo -e "${YELLOW}\nChanges to PATH require a shell reload.${NC}"
+    if confirm "Would you like to reload the shell now? (Y/n) " "y"; then
+        echo -e "${GREEN}Reloading shell...${NC}"
+        cd ~ || cd /tmp
+        exec $SHELL -l
+    else
+        echo -e "${YELLOW}Please manually reload your shell or run:${NC}"
+        echo -e "  source $(get_shell_config)"
+    fi
 }
 
 function get_shell_config {
@@ -76,6 +89,7 @@ function remove_go {
     if grep -q "$GO_IN_SHELL_CONFIG_LINE" "$SHELL_CONFIG"; then
         sed -i "\|$GO_IN_SHELL_CONFIG_LINE|d" "$SHELL_CONFIG"
         echo -e "${GREEN}Removed Go path from $SHELL_CONFIG.${NC}"
+        NEED_RELOAD=true
     fi
 }
 
@@ -92,6 +106,12 @@ function main {
     fi
 
     echo -e "${GREEN}Uninstallation complete.${NC}"
+
+    if $NEED_RELOAD; then
+        reload_shell
+    else
+        echo -e "${YELLOW}You may need to open a new terminal session for changes to take effect.${NC}"
+    fi
 }
 
 main

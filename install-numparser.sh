@@ -213,19 +213,22 @@ function update_movies_api_config {
         # Get current releases dir from movies-api .env
         local movies_api_env="$USER_HOME/movies-api/.env"
         if [ -f "$movies_api_env" ]; then
-            local current_releases=$(grep -oP "^RELEASES_DIR='?\K[^']*" "$movies_api_env" 2>/dev/null)
-            local new_releases="${PROJECT_DIR}/public/releases/"
+            local current_releases
+            current_releases=$(grep -oP "^RELEASES_DIR\s*=\s*['\"]?\K[^'\"]*" "$movies_api_env" 2>/dev/null)
+
+            local project_name=$(basename "$PROJECT_DIR")
+            local new_releases="${project_name}/public/releases/"
 
             if [[ "$current_releases" != "$new_releases" ]]; then
                 echo -e "${YELLOW}Current releases directory in movies-api: ${current_releases}${NC}"
                 if confirm "Update movies-api releases directory to ${new_releases}? (Y/n) " "y"; then
-                    sed -i "s|^RELEASES_DIR=.*|RELEASES_DIR='${new_releases}'|" "$movies_api_env"
-                    echo -e "${GREEN}Updated releases directory in movies-api${NC}"
+                    sed -i "s|^RELEASES_DIR=.*|RELEASES_DIR='${new_releases}'|" "$movies_api_env" \
+                        && echo -e "${GREEN}Updated releases directory in movies-api${NC}" \
+                        || error_exit "Failed to update RELEASES_DIR"
 
-                    # Restart movies-api service if it's running
                     if systemctl is-active --quiet movies-api; then
                         echo -e "${YELLOW}Restarting movies-api service...${NC}"
-                        sudo systemctl restart movies-api
+                        sudo systemctl restart movies-api || error_exit "Failed to restart movies-api"
                     fi
                 fi
             else

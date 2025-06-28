@@ -201,6 +201,7 @@ function install_movies_api {
     if confirm "Install movies-api? (Y/n) " "y"; then
         echo -e "${YELLOW}Installing movies-api...${NC}"
         bash <(curl -fsSL https://raw.githubusercontent.com/Igorek1986/movies-api/main/scripts/install-movies-api.sh) || error_exit "Failed to install movies-api"
+        update_movies_api_config
     fi
 }
 
@@ -297,4 +298,3 @@ echo -e "\n${GREEN}Important paths:${NC}"
 echo -e "Project directory: ${YELLOW}${PROJECT_DIR}${NC}"
 echo -e "Configuration file: ${YELLOW}${PROJECT_DIR}/config.yml${NC}"
 echo -e "Releases directory: ${YELLOW}${PROJECT_DIR}/public/releases/${NC}"
-echo -e "\n${YELLOW}Don't forget to add your JSON files to the releases directory!${NC}"

@@ -19,6 +19,7 @@ fi
 
 PROJECT_DIR="$USER_HOME/NUMParser"
 DEFAULT_PORT=38888
+NEED_RELOAD=false
 
 function error_exit {
     echo -e "${RED}Error: $1${NC}" >&2
@@ -41,6 +42,18 @@ function get_shell_config {
     fi
 }
 
+function reload_shell {
+    echo -e "${YELLOW}\nChanges to PATH require a shell reload.${NC}"
+    if confirm "Would you like to reload the shell now? (Y/n) " "y"; then
+        echo -e "${GREEN}Reloading shell...${NC}"
+        cd ~ || cd /tmp
+        exec $SHELL -l
+    else
+        echo -e "${YELLOW}Please manually reload your shell or run:${NC}"
+        echo -e "  source $(get_shell_config)"
+    fi
+}
+
 function check_go_installed {
     if command -v go >/dev/null 2>&1; then
         echo -e "${GREEN}Go is already installed${NC}"
@@ -59,9 +72,11 @@ function install_go {
     echo -e "${YELLOW}Installing Go...${NC}"
     GO_VERSION="1.24.4"
     GO_ARCHIVE="go${GO_VERSION}.linux-amd64.tar.gz"
+    TEMP_DIR=$(mktemp -d)
 
     # Download Go
-    wget "https://go.dev/dl/${GO_ARCHIVE}" || error_exit "Failed to download Go"
+    echo -e "${YELLOW}Downloading Go ${GO_VERSION}...${NC}"
+    curl -L "https://go.dev/dl/${GO_ARCHIVE}" -o "$TEMP_DIR/$GO_ARCHIVE" || error_exit "Failed to download Go"
 
     # Remove previous installation if exists
     if [ -d "/usr/local/go" ]; then
@@ -70,20 +85,22 @@ function install_go {
     fi
 
     # Install Go
-    sudo tar -C /usr/local -xzf "$GO_ARCHIVE" || error_exit "Failed to install Go"
+    echo -e "${YELLOW}Installing Go to /usr/local...${NC}"
+    sudo tar -C /usr/local -xzf "$TEMP_DIR/$GO_ARCHIVE" || error_exit "Failed to install Go"
 
     # Add Go to PATH
     local SHELL_CONFIG=$(get_shell_config)
     if ! grep -q "/usr/local/go/bin" "$SHELL_CONFIG"; then
         echo "export PATH=\$PATH:/usr/local/go/bin" >> "$SHELL_CONFIG"
+        NEED_RELOAD=true
     fi
 
     # Cleanup
-    rm "$GO_ARCHIVE"
+    rm -rf "$TEMP_DIR"
 
     # Source the configuration
     export PATH=$PATH:/usr/local/go/bin
-    source "$SHELL_CONFIG"
+    source "$SHELL_CONFIG" 2>/dev/null || true
 }
 
 function setup_project {
@@ -301,3 +318,8 @@ echo -e "\n${GREEN}Important paths:${NC}"
 echo -e "Project directory: ${YELLOW}${PROJECT_DIR}${NC}"
 echo -e "Configuration file: ${YELLOW}${PROJECT_DIR}/config.yml${NC}"
 echo -e "Releases directory: ${YELLOW}${PROJECT_DIR}/public/releases/${NC}"
+
+# Offer to reload shell if needed
+if $NEED_RELOAD; then
+    reload_shell
+fi

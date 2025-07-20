@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -79,7 +80,7 @@ func GetCollections() {
 	var collsId []*CollectionId
 
 	for c, coll := range colls {
-		fmt.Println("Get movies for:", coll.Title, c+1, "/", len(colls))
+		fmt.Println("Get movies for coll:", coll.Title, c+1, "/", len(colls))
 		fmt.Println("Overview:", coll.Overview)
 		fmt.Println("Prompt:", coll.Prompt)
 
@@ -97,7 +98,7 @@ func GetCollections() {
 			fmt.Printf("%s (%s) == ", movie.Title, movie.Year)
 			e := findTmdbMlMovie(movie)
 			if e != nil {
-				fmt.Printf("%s | %s (%v): %v \n", e.Title, e.OriginalTitle, e.Year, e.ID)
+				fmt.Printf("%s | %s (%v): %v, %.2f\n", e.Title, e.OriginalTitle, e.Year, e.ID, e.VoteAverage*math.Log(float64(e.VoteCount)))
 				ents = append(ents, e)
 			} else {
 				fmt.Println("TMDB not found")
@@ -221,6 +222,12 @@ func getCollectionId(coll *ml.Collection, ents []*models.Entity) *CollectionId {
 			rid.Parts = append(rid.Parts, tid)
 		}
 	}
+
+	sort.Slice(rid.Parts, func(i, j int) bool {
+		rankI := rid.Parts[i].VoteAverage * math.Log(float64(rid.Parts[i].VoteCount))
+		rankJ := rid.Parts[j].VoteAverage * math.Log(float64(rid.Parts[j].VoteCount))
+		return rankI > rankJ
+	})
 
 	return rid
 }

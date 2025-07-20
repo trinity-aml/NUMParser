@@ -3,20 +3,35 @@ package ml
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"google.golang.org/genai"
 )
 
-var titleRegex = regexp.MustCompile(`(.+?).\((\d\d\d\d)\);?`)
+var (
+	titleRegex  = regexp.MustCompile(`(.+?).\((\d\d\d\d)\);?`)
+	GoogleAiKey = ""
+)
+
+func Init() {
+	dir := filepath.Dir(os.Args[0])
+	buf, err := os.ReadFile(filepath.Join(dir, "aig.key"))
+	if err != nil || strings.TrimSpace(string(buf)) == "" {
+		log.Println("Fatal error read google ai key:", err)
+		os.Exit(1)
+	}
+	GoogleAiKey = strings.TrimSpace(string(buf))
+}
 
 func SendGeminiRequest(collection *Collection) ([]*MovieInfo, error) {
 	ctx := context.Background()
 
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		//TODO remove key
-		APIKey:  "AIzaSyAa3yBFAwIOOsZb31ohe3tBO50w1RKoyeE",
+		APIKey:  GoogleAiKey,
 		Backend: genai.BackendGeminiAPI,
 	})
 	if err != nil {
@@ -40,7 +55,8 @@ func SendGeminiRequest(collection *Collection) ([]*MovieInfo, error) {
 		genai.NewContentFromText(fullPrompt, genai.RoleUser),
 	}
 
-	resp, err := client.Models.GenerateContent(ctx, "gemma-3-27b-it", contents, nil)
+	//resp, err := client.Models.GenerateContent(ctx, "gemma-3-27b-it", contents, nil)
+	resp, err := client.Models.GenerateContent(ctx, "gemini-2.5-flash", contents, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Gemini API error: %w", err)
 	}

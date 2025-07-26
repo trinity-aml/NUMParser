@@ -10,11 +10,11 @@ import (
 	"strings"
 )
 
-func indexTorrs() {
-	//if IsTorrsChange {
-	//torrsearch.NewIndex(GetTorrs())
-	//}
-}
+//func indexTorrs() {
+//	if IsTorrsChange {
+//		torrsearch.NewIndex(GetTorrs())
+//	}
+//}
 
 func SearchTorr(query string) []*models.TorrentDetails {
 	matchedIDs := torrsearch.Search(query)
@@ -40,5 +40,4 @@ func SearchTorr(query string) []*models.TorrentDetails {
 		return lev1 < lev2
 	})
 	return list
-	//return nil
 }

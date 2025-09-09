@@ -16,17 +16,23 @@ func PFor[T any](arr []T, fn func(i int, el T)) {
 	wg.Wait()
 }
 
-func PForLim[T any](arr []T, lim int, fn func(int, T)) {
+func PForLim[T any](arr []T, lim int, fn func(int, T) bool) {
 	var wg sync.WaitGroup
+	isBreak := false
 	wg.Add(len(arr))
 	limits := make(chan struct{}, lim)
 	for i, _ := range arr {
 		limits <- struct{}{}
 		go func(i int) {
-			fn(i, arr[i])
+			if !fn(i, arr[i]) {
+				isBreak = true
+			}
 			<-limits
 			wg.Done()
 		}(i)
+		if isBreak {
+			return
+		}
 	}
 	wg.Wait()
 }

@@ -3,9 +3,10 @@ package web
 import (
 	"NUMParser/config"
 	"NUMParser/db"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 var route *gin.Engine
@@ -44,6 +45,7 @@ func SetStaticReleases() {
 }
 
 func Start(port string) {
+	log.Println("Init web")
 	go func() {
 		route = setupRouter()
 		err := route.Run(":" + port)

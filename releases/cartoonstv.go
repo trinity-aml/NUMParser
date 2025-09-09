@@ -1,7 +1,6 @@
 package releases
 
 import (
-	"NUMParser/config"
 	"NUMParser/db"
 	"NUMParser/db/models"
 	"NUMParser/utils"
@@ -28,11 +27,7 @@ func GetNewCartoonsTV() {
 
 	list = utils.UniqueTorrList(list)
 
-	if config.ReleasesLimit > 0 && len(list) > config.ReleasesLimit {
-		list = list[:config.ReleasesLimit]
-	}
-
-	ents := FillTMDB("CartoonsTV", false, list)
+	ents := FillTMDB("CartoonsTV", false, list, 1000)
 
 	log.Println("Found torrents:", len(ents))
 	log.Println("All torrents:", len(list))

@@ -1,7 +1,6 @@
 package releases
 
 import (
-	"NUMParser/config"
 	"NUMParser/db"
 	"NUMParser/db/models"
 	"NUMParser/utils"
@@ -34,11 +33,7 @@ func GetNewMovies() {
 
 	list = utils.UniqueTorrList(list)
 
-	if config.ReleasesLimit > 0 && len(list) > config.ReleasesLimit {
-		list = list[:config.ReleasesLimit]
-	}
-
-	ents := FillTMDB("Movies", true, list)
+	ents := FillTMDB("Movies", true, list, 1000)
 
 	log.Println("Found torrents:", len(ents))
 	log.Println("All torrents:", len(list))
@@ -66,11 +61,7 @@ func GetNewMoviesYear(year int) {
 
 	list = utils.UniqueTorrList(list)
 
-	if config.ReleasesLimit > 0 && len(list) > config.ReleasesLimit {
-		list = list[:config.ReleasesLimit]
-	}
-
-	ents := FillTMDB("Movies "+strconv.Itoa(year), true, list)
+	ents := FillTMDB("Movies "+strconv.Itoa(year), true, list, 1000)
 
 	ents = utils.Filter(ents, func(i int, e *models.Entity) bool {
 		return e == nil || e.GetTorrent() == nil

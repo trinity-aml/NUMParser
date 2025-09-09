@@ -52,7 +52,7 @@ func (t *Tasker) Run() {
 		rand.Seed(time.Now().UnixNano())
 		rand.Shuffle(len(t.tasks), func(i, j int) { t.tasks[i], t.tasks[j] = t.tasks[j], t.tasks[i] })
 	}
-	utils.PForLim(t.tasks, t.threads, func(i int, wrk worker) {
+	utils.PForLim(t.tasks, t.threads, func(i int, wrk worker) bool {
 		if !t.disableLog && !t.isStop {
 			log.Println("Task", i+1, "/", len(t.tasks))
 		}
@@ -62,6 +62,7 @@ func (t *Tasker) Run() {
 			}
 		}
 		t.wa.Done()
+		return true
 	})
 }
 

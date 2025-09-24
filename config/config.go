@@ -5,8 +5,6 @@ import "github.com/ilyakaznacheev/cleanenv"
 // const SaveReleasePath = "/home/yourok/numParser/releases"
 const SaveReleasePath = "public/releases"
 
-const ReleasesLimit = 0
-
 var ProxyHost = ""
 var UseProxy = false
 

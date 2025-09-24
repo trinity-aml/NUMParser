@@ -7,18 +7,19 @@ import (
 	"NUMParser/parser"
 	"NUMParser/utils"
 	"bytes"
-	"github.com/PuerkitoBio/goquery"
 	"log"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
-func FillTMDB(label string, isMovie bool, torrs []*models.TorrentDetails) []*models.Entity {
+func FillTMDB(label string, isMovie bool, torrs []*models.TorrentDetails, limit int) []*models.Entity {
 	list := make([]*models.Entity, len(torrs))
+	found := 0
 	var mu sync.Mutex
-	utils.PForLim(torrs, 20, func(i int, t *models.TorrentDetails) {
-		//for i, t := range torrs {
+	utils.PForLim(torrs, 20, func(i int, t *models.TorrentDetails) bool {
 		var md *models.Entity
 		indx := tmdb2.GetIndex(t.Hash)
 		if indx != 0 {
@@ -47,11 +48,15 @@ func FillTMDB(label string, isMovie bool, torrs []*models.TorrentDetails) []*mod
 		if md == nil {
 			log.Println(label+":", "Torr", i, "/", len(torrs), "not found in TMDB:", t.Title, t.Link)
 		} else {
+			found++
 			tmdb2.SetIndex(t, md)
 			md.SetTorrent(t)
 			log.Println(label+":", "Find torr", i, "/", len(torrs), "in TMDB:", t.Title)
 		}
-		//}
+		if limit > 0 && found >= limit {
+			return false
+		}
+		return true
 	})
 
 	return list

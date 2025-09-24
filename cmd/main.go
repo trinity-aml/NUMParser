@@ -4,6 +4,7 @@ import (
 	"NUMParser/config"
 	"NUMParser/db"
 	"NUMParser/db/models"
+	"NUMParser/ml"
 	"NUMParser/movies/tmdb"
 	"NUMParser/parser"
 	"NUMParser/releases"
@@ -11,8 +12,6 @@ import (
 	"NUMParser/web"
 	"context"
 	"fmt"
-	"github.com/alexflint/go-arg"
-	"github.com/jasonlvhit/gocron"
 	"log"
 	"net"
 	"net/url"
@@ -21,14 +20,15 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"github.com/alexflint/go-arg"
+	"github.com/jasonlvhit/gocron"
 )
 
 type args struct {
 	Port     string `arg:"-p" help:"web server port, default 38888"`
 	Proxy    string `arg:"--proxy" help:"proxy for rutor, http://user:password@ip:port"`
 	UseProxy bool   `arg:"--useproxy" help:"enable auto proxy"`
-
-	DBView bool `arg:"--dbview" help:"view all db"`
 }
 
 var params args
@@ -86,17 +86,21 @@ func main() {
 	db.Init()
 	loadProxy()
 	tmdb.Init()
+	ml.Init()
 
 	getDbInfo()
 	web.Start(params.Port)
 
+	//scanCollections()
 	scanReleases()
 	scanMoviesYears()
+	scanCollections()
 	web.SetStaticReleases()
 
 	log.Println("Start timer")
 	gocron.Every(3).Hours().From(calcTime()).Do(scanReleases)
 	gocron.Every(1).Day().At("2:30").Do(scanMoviesYears)
+	gocron.Every(1).Friday().At("0:00").Do(scanCollections)
 	<-gocron.Start()
 
 }
@@ -148,9 +152,9 @@ func toolResolve(host string, serverDNS string) int {
 
 func scanReleases() {
 	loadProxy()
-	getDbInfo()
 	rutorParser := parser.NewRutor()
 	rutorParser.Parse()
+	getDbInfo()
 
 	releases.GetNewMovies()
 	releases.GetFourKMovies()
@@ -170,6 +174,17 @@ func scanMoviesYears() {
 	}
 	db.SaveAll()
 	copySH()
+}
+
+func scanCollections() {
+	if time.Since(ml.CollsConfig.LastUpdated).Hours() > 160.0 {
+		// чуть меньше недели
+		// обновление раз в неделю в пятницу в 00:00
+		loadProxy()
+		releases.GetCollections()
+		db.SaveAll()
+		copySH()
+	}
 }
 
 // Exec script for copy any files

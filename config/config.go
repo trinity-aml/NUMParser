@@ -14,6 +14,7 @@ type ConfigParser struct {
 	UseProxy  string `yaml:"useproxy" env:"USEPROXY_RUTOR" env-defaults:"false"`
 	Proxy     string `yaml:"proxy" env:"PROXY_RUTOR" env-default:""`
 	TmdbToken string `yaml:"tmdbtoken"`
+	AigKey    string `yaml:"aigkey"`
 }
 
 var cfg ConfigParser
@@ -32,6 +33,8 @@ func ReadConfigParser(vars string) (string, error) {
 			return cfg.UseProxy, nil
 		case vars == "TmdbToken":
 			return cfg.TmdbToken, nil
+		case vars == "AigKey":
+			return cfg.AigKey, nil
 		}
 	}
 	return "", err

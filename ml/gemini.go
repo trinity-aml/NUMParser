@@ -1,6 +1,7 @@
 package ml
 
 import (
+	"NUMParser/config"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -18,17 +19,25 @@ import (
 var (
 	titleRegex  = regexp.MustCompile(`(.+?).\((\d\d\d\d)\);?`)
 	GoogleAiKey = ""
+	err         error
 )
 
 func Init() {
+
 	log.Println("Init ml")
-	dir := filepath.Dir(os.Args[0])
-	buf, err := os.ReadFile(filepath.Join(dir, "aig.key"))
-	if err != nil || strings.TrimSpace(string(buf)) == "" {
-		log.Println("Fatal error read google ai key:", err)
-		os.Exit(1)
+
+	GoogleAiKey, err = config.ReadConfigParser("AigKey")
+
+	if err != nil || GoogleAiKey == "" {
+		dir := filepath.Dir(os.Args[0])
+		buf, err := os.ReadFile(filepath.Join(dir, "aig.key"))
+		if err != nil || strings.TrimSpace(string(buf)) == "" {
+			log.Println("Fatal error read google ai key:", err)
+			os.Exit(1)
+		}
+		GoogleAiKey = strings.TrimSpace(string(buf))
 	}
-	GoogleAiKey = strings.TrimSpace(string(buf))
+
 	LoadConfig()
 
 	if CollsConfig == nil || len(CollsConfig.Collections) < 50 {

@@ -3,6 +3,8 @@ package utils
 import (
 	"NUMParser/db/models"
 	"github.com/agnivade/levenshtein"
+	"io"
+	"os"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -69,4 +71,34 @@ func IsEqTorrKP(t *models.TorrentDetails, kp *models.KPDetail) bool {
 func FreeOSMemGC() {
 	runtime.GC()
 	debug.FreeOSMemory()
+}
+
+func CopyFile(src, dst string) error {
+	// Открываем исходный файл
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	// Создаём/открываем файл назначения
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	// Копируем содержимое
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	// Сбрасываем буфер на диск
+	err = destFile.Sync()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

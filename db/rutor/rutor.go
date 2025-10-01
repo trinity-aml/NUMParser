@@ -4,6 +4,7 @@ import (
 	"NUMParser/db/db"
 	"NUMParser/db/models"
 	"NUMParser/db/torrsearch"
+	"NUMParser/utils"
 	"compress/flate"
 	"encoding/json"
 	bolt "go.etcd.io/bbolt"
@@ -162,6 +163,14 @@ func saveRutorLS() {
 	err = enc.Encode(torrs)
 	if err != nil {
 		log.Println("Error save torrs:", err)
+		return
+	}
+
+	src := dir + "/rutor.ls"
+	dest := dir + "/public/releases/rutor.ls"
+	err = utils.CopyFile(src, dest)
+	if err != nil {
+		log.Println("Error copy rutor.ls:", err)
 		return
 	}
 }

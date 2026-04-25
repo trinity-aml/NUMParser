@@ -180,14 +180,96 @@
             container.append(row)
         }
 
+        const videoQualityLabels = {
+            0: 'Ниже 720p',
+            100: 'WEB-DL 720p',
+            101: 'BDRip 720p',
+            102: 'BDRip 720p HEVC',
+            200: 'WEB-DL 1080p',
+            201: 'BDRip 1080p',
+            202: 'BDRip 1080p HEVC',
+            203: 'BDRemux 1080p',
+            300: 'WEB-DL 2160p SDR',
+            301: 'WEB-DL 2160p HDR',
+            302: 'WEB-DL 2160p Dolby Vision',
+            303: 'BDRip 2160p SDR',
+            304: 'BDRip 2160p HDR',
+            305: 'BDRip 2160p Dolby Vision',
+            306: 'UHD BDRemux 2160p SDR',
+            307: 'UHD BDRemux 2160p HDR',
+            308: 'UHD BDRemux 2160p Dolby Vision'
+        }
+
+        const audioQualityLabels = {
+            0: 'Не определена',
+            1: 'Авторская',
+            100: 'Любительская одноголосая',
+            101: 'Любительская двухголосая',
+            102: 'Любительская многоголосая',
+            103: 'Любительская студия',
+            200: 'Профессиональная одноголосая',
+            201: 'Профессиональная двухголосая',
+            202: 'Профессиональная многоголосая',
+            203: 'Профессиональная студия',
+            300: 'Дублированная',
+            301: 'Лицензия'
+        }
+
+        function videoQualityLabel(code){
+            return videoQualityLabels[Number(code)] || String(code)
+        }
+
+        function audioQualityLabel(code){
+            return audioQualityLabels[Number(code)] || String(code)
+        }
+
+        function parseSizeBytes(value){
+            const text = (value || '').toString().replace(/\u00a0/g, ' ').replace(',', '.').trim()
+            const match = text.match(/([\d.]+)\s*([kmgt]?i?b|[кмгт]?б)/i)
+            if(!match) return 0
+
+            const amount = parseFloat(match[1])
+            if(!Number.isFinite(amount)) return 0
+
+            const unit = match[2].toLowerCase()
+            const multipliers = {
+                b: 1,
+                kb: 1024,
+                kib: 1024,
+                mb: 1024 ** 2,
+                mib: 1024 ** 2,
+                gb: 1024 ** 3,
+                gib: 1024 ** 3,
+                tb: 1024 ** 4,
+                tib: 1024 ** 4,
+                'б': 1,
+                'кб': 1024,
+                'мб': 1024 ** 2,
+                'гб': 1024 ** 3,
+                'тб': 1024 ** 4
+            }
+
+            return amount * (multipliers[unit] || 1)
+        }
+
+        function sortValue(element, key){
+            if(key === 'sid') return Number(element.Seed) || 0
+            if(key === 'size') return parseSizeBytes(element.Size)
+            if(key === 'date') return Number(element.date) || 0
+            return 0
+        }
+
         function sort(){
             content.empty()
 
             const key = window.localStorage.getItem('sort') || 'sid'
 
             filtred.sort((c,b)=>{
-                if(c[key] < b[key]) return 1
-                if(c[key] > b[key]) return -1
+                const cv = sortValue(c, key)
+                const bv = sortValue(b, key)
+
+                if(cv < bv) return 1
+                if(cv > bv) return -1
                 return 0
             })
 
@@ -273,10 +355,8 @@
             let quality = []
 
             results.forEach(element => {
-                if(element.AudioQuality && element.AudioQuality.length){
-                    element.AudioQuality.forEach(voice => {
-                        if(filter_search.voice.indexOf(voice) == -1) filter_search.voice.push(voice)
-                    })
+                if(Number(element.AudioQuality) > 0 && filter_search.voice.indexOf(element.AudioQuality) === -1){
+                    filter_search.voice.push(element.AudioQuality)
                 }
 
                 if(filter_search.tracker.indexOf(element.Tracker) === -1) filter_search.tracker.push(element.Tracker)
@@ -300,7 +380,12 @@
             years.sort().reverse() 
             seasons.sort().reverse()
             types.sort().reverse() 
-            quality.sort()
+            quality.sort((a,b)=>Number(a)-Number(b))
+            filter_search.voice.sort((a,b)=>{
+                if(a === 'Любая') return -1
+                if(b === 'Любая') return 1
+                return Number(a)-Number(b)
+            })
 
             years.splice( 0, 0, "Любой" )
             seasons.splice( 0, 0, "Любой" )
@@ -316,7 +401,11 @@
                 const select = $('[name="'+name+'"]', filrt)
 
                 value.forEach(v=>{
-                    select.append($('<option></option>').val(v).text(v))
+                    let label = v
+                    if(name === 'quality' && v !== 'Любое') label = videoQualityLabel(v)
+                    if(name === 'voice' && v !== 'Любая') label = audioQualityLabel(v)
+
+                    select.append($('<option></option>').val(v).text(label))
                 })
 
                 select.val(value[0])
@@ -357,7 +446,7 @@
                 if(type || refine || exclude || quality !== "Любое"  || year !== "Любой" || tracker !== "Любой" || voice !== "Любая" || season !== "Любой"|| category !== "Любая") any = true
 
                 if(quality !== "Любое"){
-                    if(element.VideoQuality == parseInt(quality)) pass = true
+                    if(Number(element.VideoQuality) === Number(quality)) pass = true
                     else nopass = true
                 }
 
@@ -372,7 +461,7 @@
                 } 
 
                 if(voice !== "Любая"){
-                    if(element.AudioQuality.indexOf(voice) !== -1) pass = true
+                    if(Number(element.AudioQuality) === Number(voice)) pass = true
                     else nopass = true
                 }
 

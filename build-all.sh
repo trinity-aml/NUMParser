@@ -132,3 +132,17 @@ rm -rf tmp
 mkdir tmp
 cp dist/* tmp/
 cp -r public tmp/
+cp config.yml tmp/
+
+TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "no-tag")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "no-commit")
+ARCHIVE="${ROOT}/dist/numParser-${TAG}-${COMMIT}.zip"
+
+if ! command -v zip >/dev/null 2>&1; then
+  echo "zip command not found"
+  exit 1
+fi
+
+rm -f "${ARCHIVE}"
+echo "Pack ${ARCHIVE}"
+(cd tmp && zip -qr "${ARCHIVE}" .)

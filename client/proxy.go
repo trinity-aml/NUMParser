@@ -19,20 +19,23 @@ func getProxyFromList() string {
 		log.Println("Error load proxy list:", err)
 		return ""
 	}
-	list := strings.Split(string(buf), "\n")
-	if proxyNum > len(list) {
-		proxyNum = 0
-		if len(list) > 0 {
-			return list[0]
+	var list []string
+	for _, proxy := range strings.Split(string(buf), "\n") {
+		proxy = strings.TrimSpace(proxy)
+		if proxy != "" {
+			list = append(list, proxy)
 		}
+	}
+	if proxyNum >= len(list) {
+		proxyNum = 0
+	}
+	if len(list) == 0 {
 		return ""
 	}
 	proxyHost := ""
-	if len(list) > 0 {
-		proxyHost = strings.TrimSpace(list[proxyNum])
-		if !strings.HasPrefix(proxyHost, "http") && !strings.HasPrefix(proxyHost, "socks") {
-			proxyHost = "//" + proxyHost
-		}
+	proxyHost = list[proxyNum]
+	if !strings.HasPrefix(proxyHost, "http") && !strings.HasPrefix(proxyHost, "socks") {
+		proxyHost = "//" + proxyHost
 	}
 	proxyNum++
 	return proxyHost

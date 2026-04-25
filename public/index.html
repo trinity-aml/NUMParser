@@ -14,7 +14,7 @@
     <link rel="search" type="application/opensearchdescription+xml" title="Torlook" href="/opensearch.xml">
     <link rel="stylesheet" type="text/css" href="./css/icheck-material.css?v=5">
     <link rel="stylesheet" type="text/css" href="./css/microtip.min.css?v=1">
-    <link rel="stylesheet" type="text/css" href="./css/styles.css?v=15" />
+    <link rel="stylesheet" type="text/css" href="./css/styles.css?v=16" />
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
@@ -27,6 +27,9 @@
 
 
 <div id="page">
+    <div class="topbar">
+        <a class="nav-button" href="/settings">Настройки</a>
+    </div>
 
     <div class="logo">
         <!--<img src="./img/logo.svg" class="logo-icon" />-->
@@ -163,6 +166,20 @@
             tracker: []
         }
 
+        function safeHref(value, allowMagnet){
+            const href = (value || '').toString().trim()
+            if(href.indexOf('/') === 0 || href.indexOf('http://') === 0 || href.indexOf('https://') === 0) return href
+            if(allowMagnet && href.indexOf('magnet:') === 0) return href
+            return '#'
+        }
+
+        function appendInfoRow(container, label, value){
+            const row = $('<div></div>')
+            row.append($('<span></span>').text(label))
+            row.append($('<div></div>').text(value || '---'))
+            container.append(row)
+        }
+
         function sort(){
             content.empty()
 
@@ -175,50 +192,50 @@
             })
 
             filtred.forEach(function(elem){
-                const item = $(`<div class="webResult item">
-                    <p><a href="`+elem.Link+`" target="_blank">`+elem.Title+`</a></p>
-                    <div class="info"></div>
-                    <div class="h2">
-						<img class="trackerIco" src="./img/ico/`+elem.Tracker+`.ico">
-                        `+elem.Tracker+`
-                        <span class="webResultTitle"> 
-                            <span class="size">`+elem.Size+`</span>
-                            <span class="date">`+elem.dateHuman+`</span>
-                            <span class="seeders">⬆ `+(elem.Seed || 0)+`</span>
-                            <span class="leechers">⬇ `+(elem.Peer || 0)+`</span>
+                const item = $('<div class="webResult item"></div>')
+                const title = $('<p></p>')
+                const titleLink = $('<a target="_blank"></a>')
+                    .attr('href', safeHref(elem.Link))
+                    .text(elem.Title || '')
+                title.append(titleLink)
 
-                            <span class="magnet">
-                                <a class="magneto ut-download-url" href="`+elem.Magnet+`"></a>
-                            </span>
-                        </span>
-                    </div>
-                </div>`)
+                const infoBlock = $('<div class="info"></div>')
+                const meta = $('<div class="h2"></div>')
+                const tracker = elem.Tracker || ''
+
+                if(tracker){
+                    meta.append($('<img class="trackerIco" alt="">').attr('src', './img/ico/' + encodeURIComponent(tracker) + '.ico'))
+                    meta.append(document.createTextNode(tracker))
+                }
+
+                const metaTitle = $('<span class="webResultTitle"></span>')
+                metaTitle.append($('<span class="size"></span>').text(elem.Size || ''))
+                metaTitle.append(document.createTextNode(' '))
+                metaTitle.append($('<span class="date"></span>').text(elem.dateHuman || ''))
+                metaTitle.append(document.createTextNode(' '))
+                metaTitle.append($('<span class="seeders"></span>').text('⬆ ' + (elem.Seed || 0)))
+                metaTitle.append(document.createTextNode(' '))
+                metaTitle.append($('<span class="leechers"></span>').text('⬇ ' + (elem.Peer || 0)))
+
+                const magnet = $('<span class="magnet"></span>')
+                magnet.append($('<a class="magneto ut-download-url"></a>').attr('href', safeHref(elem.Magnet, true)))
+                metaTitle.append(magnet)
+
+                meta.append(metaTitle)
+                item.append(title, infoBlock, meta)
 
                 if(elem.videoInfo){
-                    const info = $(`<div>
-                        <div>
-                            <span>Video</span>
-                            <div>`+(elem.videoInfo.video || '---')+`</div>
-                        </div>
-                        <div>
-                            <span>Audio</span>
-                            <div>`+(elem.videoInfo.audio || '---')+`</div>
-                        </div>
-                        <div>
-                            <span>Subtitle</span>
-                            <div>`+(elem.videoInfo.subtitle || '---')+`</div>
-                        </div>
-                        <div>
-                            <span>Voice</span>
-                            <div>`+(elem.videoInfo.voice || '---')+`</div>
-                        </div>
-                    </div>`)
+                    const info = $('<div></div>')
+                    appendInfoRow(info, 'Video', elem.videoInfo.video)
+                    appendInfoRow(info, 'Audio', elem.videoInfo.audio)
+                    appendInfoRow(info, 'Subtitle', elem.videoInfo.subtitle)
+                    appendInfoRow(info, 'Voice', elem.videoInfo.voice)
 
                     item.find('.info').append(info)
                 }
 
                 if(elem.media && elem.media.length){
-                    const icon = $('<span class="files">≣ ('+elem.media.length+')</span>')
+                    const icon = $('<span class="files"></span>').text('≣ ('+elem.media.length+')')
 
                     const files = $(`<div class="files">
                             <div class="files-title">Файлы</div>
@@ -226,7 +243,7 @@
                         </div>`)
 
                     elem.media.forEach(file=>{
-                        $('.files-list',files).append('<div>'+file.path+'</div>')
+                        $('.files-list',files).append($('<div></div>').text(file.path || ''))
                     })
 
                     icon.on('click',()=>{
@@ -299,7 +316,7 @@
                 const select = $('[name="'+name+'"]', filrt)
 
                 value.forEach(v=>{
-                    select.append('<option value="'+v+'">'+v+'</option>')
+                    select.append($('<option></option>').val(v).text(v))
                 })
 
                 select.val(value[0])
@@ -419,7 +436,7 @@
                         success: (json) => {
                             loading.hide()
 
-                            if(json.length){
+                            if(Array.isArray(json) && json.length){
                                 results = json
 
                                 results.forEach(function(elem){

@@ -222,7 +222,7 @@ func (self *RutorParser) parseTitle(td *models.TorrentDetails, cat string) {
 	td.Title = strings.ReplaceAll(td.Title, "&amp;", "&")
 	re, err := regexp.Compile("(.+)\\((.+)\\)(.+)")
 	if err != nil {
-		log.Fatalf("Error parse torrent name:", err)
+		log.Fatalf("Error parse torrent name: %v", err)
 	}
 	matches := re.FindStringSubmatch(td.Title)
 	re, err = regexp.Compile("\\[.*?\\]")

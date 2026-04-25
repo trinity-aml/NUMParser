@@ -51,9 +51,11 @@ func main() {
 	}
 
 	if params.Proxy != "" {
-		_, err := url.Parse(params.Proxy)
+		proxyURL, err := url.Parse(params.Proxy)
 		if err != nil {
 			log.Println("Error parse proxy host:", err)
+		} else if proxyURL.Scheme == "" || proxyURL.Host == "" {
+			log.Println("Error parse proxy host: empty scheme or host")
 		} else {
 			config.ProxyHost = params.Proxy
 		}
@@ -61,11 +63,15 @@ func main() {
 		proxy, err := config.ReadConfigParser("Proxy")
 		if err == nil {
 			params.Proxy = proxy
-			_, err := url.Parse(params.Proxy)
-			if err == nil {
+			proxyURL, err := url.Parse(params.Proxy)
+			if params.Proxy == "" {
+				config.ProxyHost = ""
+			} else if err == nil && proxyURL.Scheme != "" && proxyURL.Host != "" {
 				config.ProxyHost = params.Proxy
-			} else {
+			} else if err != nil {
 				log.Println("Error parse proxy host:", err)
+			} else {
+				log.Println("Error parse proxy host: empty scheme or host")
 			}
 		}
 	}
@@ -79,6 +85,7 @@ func main() {
 		} else {
 			params.UseProxy = false
 		}
+		config.UseProxy = params.UseProxy
 	}
 
 	dnsResolve()
@@ -112,11 +119,11 @@ func dnsResolve() {
 		ret = toolResolve("www.google.com", ip)
 		switch {
 		case ret == 2:
-			fmt.Println("DNS resolver OK\n")
+			fmt.Println("DNS resolver OK")
 		case ret == 1:
-			fmt.Println("New DNS resolver OK\n")
+			fmt.Println("New DNS resolver OK")
 		case ret == 0:
-			fmt.Println("New DNS resolver failed\n")
+			fmt.Println("New DNS resolver failed")
 		}
 		if ret == 2 || ret == 1 {
 			break

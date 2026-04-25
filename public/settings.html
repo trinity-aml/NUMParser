@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width">
+    <link rel="icon" href="./img/favicon.ico">
+
+    <title>Настройки numParser</title>
+
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Rubik:300,400&display=auto" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik:300,400&display=auto">
+    <link rel="stylesheet" type="text/css" href="./css/icheck-material.css?v=5">
+    <link rel="stylesheet" type="text/css" href="./css/styles.css?v=16" />
+</head>
+
+<body>
+<div id="page" class="settings-page">
+    <div class="topbar">
+        <a class="nav-button" href="/">На главную</a>
+    </div>
+
+    <div id="settingsPanel">
+        <h2>Настройки</h2>
+
+        <form id="settingsForm">
+            <div class="settings-grid">
+                <label class="settings-field">
+                    <span>Rutor host</span>
+                    <input name="host" type="url" placeholder="http://rutor.info" required>
+                </label>
+
+                <label class="settings-field">
+                    <span>Порт веб-интерфейса</span>
+                    <input name="port" type="number" min="1" max="65535" required>
+                </label>
+
+                <label class="settings-field settings-field-wide">
+                    <span>Прокси</span>
+                    <input name="proxy" type="url" placeholder="http://user:password@ip:port">
+                </label>
+
+                <label class="settings-check settings-field-wide">
+                    <input name="useproxy" type="checkbox">
+                    <span>Использовать автоматический список прокси</span>
+                </label>
+
+                <label class="settings-field settings-field-wide">
+                    <span>TMDB token</span>
+                    <input name="tmdbtoken" type="password" autocomplete="off">
+                </label>
+
+                <label class="settings-field settings-field-wide">
+                    <span>Google AI Studio key</span>
+                    <input name="aigkey" type="password" autocomplete="off">
+                </label>
+            </div>
+
+            <div class="settings-actions">
+                <button type="submit" class="primary-button">Сохранить</button>
+                <button type="button" class="secondary-button" id="reloadSettings">Отменить</button>
+            </div>
+
+            <div id="settingsMessage" class="settings-message"></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('settingsForm')
+    const message = document.getElementById('settingsMessage')
+    const reloadButton = document.getElementById('reloadSettings')
+
+    function showMessage(text, type) {
+        message.textContent = text
+        message.className = 'settings-message ' + (type || '')
+    }
+
+    function setFormDisabled(disabled) {
+        Array.from(form.elements).forEach(function(element) {
+            element.disabled = disabled
+        })
+    }
+
+    function fillForm(settings) {
+        form.elements.host.value = settings.host || ''
+        form.elements.port.value = settings.port || ''
+        form.elements.proxy.value = settings.proxy || ''
+        form.elements.useproxy.checked = Boolean(settings.useproxy)
+        form.elements.tmdbtoken.value = settings.tmdbtoken || ''
+        form.elements.aigkey.value = settings.aigkey || ''
+    }
+
+    function collectSettings() {
+        return {
+            host: form.elements.host.value.trim(),
+            port: form.elements.port.value.trim(),
+            proxy: form.elements.proxy.value.trim(),
+            useproxy: form.elements.useproxy.checked,
+            tmdbtoken: form.elements.tmdbtoken.value.trim(),
+            aigkey: form.elements.aigkey.value.trim()
+        }
+    }
+
+    async function loadSettings() {
+        setFormDisabled(true)
+        showMessage('Загрузка...', '')
+        try {
+            const response = await fetch('/api/settings')
+            const data = await response.json()
+            if (!response.ok) {
+                throw new Error(data.error || 'Не удалось загрузить настройки')
+            }
+            fillForm(data.settings)
+            showMessage('', '')
+        } catch (error) {
+            showMessage(error.message, 'error')
+        } finally {
+            setFormDisabled(false)
+        }
+    }
+
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault()
+        setFormDisabled(true)
+        showMessage('Сохранение...', '')
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(collectSettings())
+            })
+            const data = await response.json()
+            if (!response.ok) {
+                throw new Error(data.error || 'Не удалось сохранить настройки')
+            }
+            fillForm(data.settings)
+            if (data.restart_required) {
+                showMessage('Сохранено. Новый порт применится после перезапуска numParser.', 'warning')
+            } else {
+                showMessage('Сохранено.', 'success')
+            }
+        } catch (error) {
+            showMessage(error.message, 'error')
+        } finally {
+            setFormDisabled(false)
+        }
+    })
+
+    reloadButton.addEventListener('click', loadSettings)
+    loadSettings()
+</script>
+</body>
+</html>

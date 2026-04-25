@@ -66,6 +66,9 @@ func SetTorrs(list []*models.TorrentDetails) {
 }
 
 func AddTorr(t *models.TorrentDetails) {
+	muTorrs.Lock()
+	defer muTorrs.Unlock()
+
 	if t.Hash != "" {
 		for i, tdb := range torrs {
 			if tdb.Hash == t.Hash {
@@ -76,8 +79,6 @@ func AddTorr(t *models.TorrentDetails) {
 		}
 	}
 
-	muTorrs.Lock()
-	defer muTorrs.Unlock()
 	IsTorrsChange = true
 	torrs = append(torrs, t)
 }

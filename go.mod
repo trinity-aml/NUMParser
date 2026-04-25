@@ -19,6 +19,7 @@ require (
 	go.etcd.io/bbolt v1.3.7
 	golang.org/x/net v0.38.0
 	google.golang.org/genai v1.16.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -61,7 +62,6 @@ require (
 	google.golang.org/grpc v1.66.2 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	moul.io/http2curl v1.0.0 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )

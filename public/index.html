@@ -259,6 +259,20 @@
             return 0
         }
 
+        function trackerIconName(tracker){
+            const normalized = (tracker || '').toString().toLowerCase().replace(/[^a-z0-9а-яё]/g, '')
+            const aliases = {
+                'nnmclub': 'nnmclub',
+                'nnm': 'nnmclub',
+                'rutrackerorg': 'rutracker',
+                'rutracker': 'rutracker',
+                'torrentby': 'torrentby',
+                'torrent': 'torrentby'
+            }
+
+            return aliases[normalized] || normalized
+        }
+
         function sort(){
             content.empty()
 
@@ -286,7 +300,7 @@
                 const tracker = elem.Tracker || ''
 
                 if(tracker){
-                    meta.append($('<img class="trackerIco" alt="">').attr('src', './img/ico/' + encodeURIComponent(tracker) + '.ico'))
+                    meta.append($('<img class="trackerIco" alt="">').attr('src', './img/ico/' + encodeURIComponent(trackerIconName(tracker)) + '.ico'))
                     meta.append(document.createTextNode(tracker))
                 }
 

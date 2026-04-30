@@ -22,6 +22,14 @@ func subFS(prefix string) http.FileSystem {
 	return http.FS(sub)
 }
 
+func mustReadEmbed(name string) []byte {
+	buf, err := publicFS.ReadFile(name)
+	if err != nil {
+		log.Fatalf("embed read %q: %v", name, err)
+	}
+	return buf
+}
+
 var route *gin.Engine
 var currentPort string
 
@@ -36,15 +44,17 @@ func setupRouter() *gin.Engine {
 	r.StaticFS("/img", subFS("public/img"))
 	r.StaticFS("/js", subFS("public/js"))
 
-	publicRoot := subFS("public")
+	indexHTML := mustReadEmbed("public/index.html")
+	settingsHTML := mustReadEmbed("public/settings.html")
+	htmlType := "text/html; charset=utf-8"
 	r.GET("/", func(c *gin.Context) {
-		c.FileFromFS("index.html", publicRoot)
+		c.Data(http.StatusOK, htmlType, indexHTML)
 	})
 	r.GET("/settings", func(c *gin.Context) {
-		c.FileFromFS("settings.html", publicRoot)
+		c.Data(http.StatusOK, htmlType, settingsHTML)
 	})
 	r.GET("/settings/", func(c *gin.Context) {
-		c.FileFromFS("settings.html", publicRoot)
+		c.Data(http.StatusOK, htmlType, settingsHTML)
 	})
 
 	// http://127.0.0.1:38888/search?query=venom

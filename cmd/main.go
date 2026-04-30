@@ -102,7 +102,6 @@ func main() {
 	scanReleases()
 	scanMoviesYears()
 	scanCollections()
-	web.SetStaticReleases()
 
 	log.Println("Start timer")
 	gocron.Every(3).Hours().From(calcTime()).Do(scanReleases)

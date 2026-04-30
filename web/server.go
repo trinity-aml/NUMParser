@@ -43,6 +43,7 @@ func setupRouter() *gin.Engine {
 	r.StaticFS("/css", subFS("public/css"))
 	r.StaticFS("/img", subFS("public/img"))
 	r.StaticFS("/js", subFS("public/js"))
+	r.Static("/releases", config.SaveReleasePath)
 
 	indexHTML := mustReadEmbed("public/index.html")
 	settingsHTML := mustReadEmbed("public/settings.html")
@@ -101,15 +102,6 @@ func setupRouter() *gin.Engine {
 	})
 
 	return r
-}
-
-var isSetStatic bool
-
-func SetStaticReleases() {
-	if !isSetStatic {
-		route.Static("/releases", config.SaveReleasePath)
-		isSetStatic = true
-	}
 }
 
 func Start(port string) {

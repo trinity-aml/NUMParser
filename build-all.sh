@@ -131,7 +131,6 @@ fi
 rm -rf tmp
 mkdir tmp
 cp dist/* tmp/
-cp -r public tmp/
 cp config.yml tmp/
 
 TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "no-tag")

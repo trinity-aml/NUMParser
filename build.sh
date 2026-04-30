@@ -41,4 +41,3 @@ fi
 rm -rf tmp
 mkdir tmp
 cp dist/* tmp/
-cp -r public tmp/

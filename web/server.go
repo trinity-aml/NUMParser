@@ -3,11 +3,24 @@ package web
 import (
 	"NUMParser/config"
 	"NUMParser/db"
+	"embed"
+	"io/fs"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+//go:embed public/css public/js public/img public/index.html public/settings.html
+var publicFS embed.FS
+
+func subFS(prefix string) http.FileSystem {
+	sub, err := fs.Sub(publicFS, prefix)
+	if err != nil {
+		log.Fatalf("embed sub %q: %v", prefix, err)
+	}
+	return http.FS(sub)
+}
 
 var route *gin.Engine
 var currentPort string
@@ -19,12 +32,20 @@ func setupRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
-	r.Static("/css", "public/css")
-	r.Static("/img", "public/img")
-	r.Static("/js", "public/js")
-	r.StaticFile("/", "public/index.html")
-	r.StaticFile("/settings", "public/settings.html")
-	r.StaticFile("/settings/", "public/settings.html")
+	r.StaticFS("/css", subFS("public/css"))
+	r.StaticFS("/img", subFS("public/img"))
+	r.StaticFS("/js", subFS("public/js"))
+
+	publicRoot := subFS("public")
+	r.GET("/", func(c *gin.Context) {
+		c.FileFromFS("index.html", publicRoot)
+	})
+	r.GET("/settings", func(c *gin.Context) {
+		c.FileFromFS("settings.html", publicRoot)
+	})
+	r.GET("/settings/", func(c *gin.Context) {
+		c.FileFromFS("settings.html", publicRoot)
+	})
 
 	// http://127.0.0.1:38888/search?query=venom
 	r.GET("/search", func(c *gin.Context) {

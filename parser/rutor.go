@@ -73,6 +73,12 @@ func (self *RutorParser) Parse() {
 		tsk.DisableLog()
 		taskers = append(taskers, tsk)
 		dbtorrs := rutor.GetTorrs()
+		dbhashes := make(map[string]struct{}, len(dbtorrs))
+		for _, t := range dbtorrs {
+			if t.Hash != "" {
+				dbhashes[t.Hash] = struct{}{}
+			}
+		}
 
 		for i := 0; i < pgs; i++ {
 			page := strconv.Itoa(i)
@@ -89,10 +95,8 @@ func (self *RutorParser) Parse() {
 				list := self.parsePage(p)
 				finds := 0
 				for _, d := range list {
-					for _, dbtorr := range dbtorrs {
-						if d.Hash == dbtorr.Hash {
-							finds++
-						}
+					if _, ok := dbhashes[d.Hash]; ok {
+						finds++
 					}
 					rutor.AddTorr(d)
 				}
@@ -456,14 +460,15 @@ func ParseAQuality(params string) int {
 }
 
 func clear(txt string) string {
-	ret := ""
 	txt = strings.ToLower(txt)
+	var b strings.Builder
+	b.Grow(len(txt))
 	for _, r := range txt {
 		if (r >= '0' && r <= '9') || (r >= 'a' && r <= 'z') || (r >= 'а' && r <= 'я') || r == 'ё' || r == ' ' {
-			ret = ret + string(r)
+			b.WriteRune(r)
 		}
 	}
-	return ret
+	return b.String()
 }
 
 var Q_Lic_Names = []string{

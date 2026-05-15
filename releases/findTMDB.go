@@ -10,51 +10,37 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
 func FillTMDB(label string, isMovie bool, torrs []*models.TorrentDetails, limit int) []*models.Entity {
 	list := make([]*models.Entity, len(torrs))
-	found := 0
-	var mu sync.Mutex
+	var found atomic.Int32
 	utils.PForLim(torrs, 20, func(i int, t *models.TorrentDetails) bool {
 		var md *models.Entity
 		indx := tmdb2.GetIndex(t.Hash)
 		if indx != 0 {
 			md = tmdb.GetVideoDetails(isMovie, indx)
-			if md != nil {
-				mu.Lock()
-				list[i] = md
-				mu.Unlock()
-			}
 		}
 		if md == nil {
 			md = FindTMDBID(isMovie, t)
-			if md != nil {
-				mu.Lock()
-				list[i] = md
-				mu.Unlock()
-			} else {
+			if md == nil {
 				md = FindTMDB(isMovie, t)
-				if md != nil {
-					mu.Lock()
-					list[i] = md
-					mu.Unlock()
-				}
 			}
 		}
 		if md == nil {
 			log.Println(label+":", "Torr", i, "/", len(torrs), "not found in TMDB:", t.Title, t.Link)
 		} else {
-			found++
+			list[i] = md
+			f := found.Add(1)
 			tmdb2.SetIndex(t, md)
 			md.SetTorrent(t)
 			log.Println(label+":", "Find torr", i, "/", len(torrs), "in TMDB:", t.Title)
-		}
-		if limit > 0 && found >= limit {
-			return false
+			if limit > 0 && int(f) >= limit {
+				return false
+			}
 		}
 		return true
 	})

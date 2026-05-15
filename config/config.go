@@ -147,6 +147,28 @@ func validateProxyURL(raw string) error {
 	}
 }
 
+func RutorHost() string {
+	host, err := ReadConfigParser("Host")
+	host = strings.TrimSpace(host)
+	if err != nil || host == "" {
+		return "http://rutor.info"
+	}
+	return strings.TrimRight(host, "/")
+}
+
+func JoinRutorLink(host, link string) string {
+	if link == "" {
+		return ""
+	}
+	if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
+		return link
+	}
+	if !strings.HasPrefix(link, "/") {
+		link = "/" + link
+	}
+	return host + link
+}
+
 func ReadConfigParser(vars string) (string, error) {
 	next, err := LoadConfig()
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"google.golang.org/genai"
@@ -20,7 +21,27 @@ var (
 	titleRegex  = regexp.MustCompile(`(.+?).\((\d\d\d\d)\);?`)
 	GoogleAiKey = ""
 	err         error
+
+	geminiClient   *genai.Client
+	geminiClientMu sync.Mutex
 )
+
+func getGeminiClient() (*genai.Client, error) {
+	geminiClientMu.Lock()
+	defer geminiClientMu.Unlock()
+	if geminiClient != nil {
+		return geminiClient, nil
+	}
+	c, err := genai.NewClient(context.Background(), &genai.ClientConfig{
+		APIKey:  GoogleAiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
+	if err != nil {
+		return nil, err
+	}
+	geminiClient = c
+	return geminiClient, nil
+}
 
 func Init() {
 
@@ -72,10 +93,7 @@ func Init() {
 func GetCollectionMovies(collection *Collection) ([]*MovieInfo, error) {
 	ctx := context.Background()
 
-	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey:  GoogleAiKey,
-		Backend: genai.BackendGeminiAPI,
-	})
+	client, err := getGeminiClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
@@ -123,10 +141,7 @@ func GetCollectionMovies(collection *Collection) ([]*MovieInfo, error) {
 func GenCollection(count int) ([]*Collection, error) {
 	ctx := context.Background()
 
-	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey:  GoogleAiKey,
-		Backend: genai.BackendGeminiAPI,
-	})
+	client, err := getGeminiClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}

@@ -4,8 +4,10 @@ import (
 	"errors"
 	"image"
 	"image/color"
+	"io"
 	"log"
 	"net/http"
+	"time"
 
 	_ "image/jpeg"
 	_ "image/png"
@@ -16,6 +18,31 @@ import (
 
 const cardW, cardH = 267, 400  // размер постеров
 const width, height = 748, 440 // размер хоста
+
+var coverHTTPClient = &http.Client{
+	Timeout: 60 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        20,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     90 * time.Second,
+	},
+}
+
+func fetchImage(url string) (image.Image, error) {
+	resp, err := coverHTTPClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(resp.Status)
+	}
+	img, _, err := image.Decode(resp.Body)
+	return img, err
+}
 
 func drawCard(dc *gg.Context, img image.Image, x, y, angle, darken float64) {
 	// отдельный контекст для постера
@@ -64,19 +91,9 @@ func BuildCover(urls []string, backs string, filename string) error {
 	dc := gg.NewContext(width, height)
 
 	if backs != "" {
-		resp, err := http.Get(backs)
+		img, err := fetchImage(backs)
 		if err != nil {
 			log.Println("Error fetching backdrop:", err)
-			return err
-		}
-		if resp.StatusCode != http.StatusOK {
-			log.Println("Error fetching backdrop:", resp.StatusCode)
-			return errors.New("Error fetching backdrop: " + resp.Status)
-		}
-		defer resp.Body.Close()
-		img, _, err := image.Decode(resp.Body)
-		if err != nil {
-			log.Println("Error decoding back image:", err)
 			return err
 		}
 		// масштабируем фон под холст
@@ -97,20 +114,18 @@ func BuildCover(urls []string, backs string, filename string) error {
 	}
 
 	// загружаем изображения
-	var imgs []image.Image
+	imgs := make([]image.Image, 0, len(urls))
 	for _, url := range urls {
-		resp, err := http.Get(url)
+		img, err := fetchImage(url)
 		if err != nil {
 			log.Println("Error fetching poster:", err)
 			return err
 		}
-		defer resp.Body.Close()
-		img, _, err := image.Decode(resp.Body)
-		if err != nil {
-			log.Println("Error decoding poster:", err)
-			return err
-		}
-		imgs = append([]image.Image{img}, imgs...)
+		imgs = append(imgs, img)
+	}
+	// reverse, чтобы сохранить прежний порядок отрисовки
+	for i, j := 0, len(imgs)-1; i < j; i, j = i+1, j-1 {
+		imgs[i], imgs[j] = imgs[j], imgs[i]
 	}
 
 	// позиции и углы (снизу вверх)

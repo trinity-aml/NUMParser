@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,7 +14,7 @@ type Tasker struct {
 	threads    int
 	shuffle    bool
 	disableLog bool
-	isStop     bool
+	isStop     atomic.Bool
 	wa         sync.WaitGroup
 	mu         sync.Mutex
 }
@@ -53,12 +54,13 @@ func (t *Tasker) Run() {
 		rand.Shuffle(len(t.tasks), func(i, j int) { t.tasks[i], t.tasks[j] = t.tasks[j], t.tasks[i] })
 	}
 	utils.PForLim(t.tasks, t.threads, func(i int, wrk worker) bool {
-		if !t.disableLog && !t.isStop {
+		stopped := t.isStop.Load()
+		if !t.disableLog && !stopped {
 			log.Println("Task", i+1, "/", len(t.tasks))
 		}
-		if !t.isStop {
+		if !stopped {
 			if !wrk.Func(wrk.Data) {
-				t.isStop = true
+				t.isStop.Store(true)
 			}
 		}
 		t.wa.Done()

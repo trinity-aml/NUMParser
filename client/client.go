@@ -14,13 +14,13 @@ import (
 
 var Err404 = errors.New("404 not found")
 
-func GetNic(link, referer, cookie string) (string, error) {
-	var (
-		dnsResolverIP        = "151.80.222.79:53"
-		dnsResolverProto     = "udp"
-		dnsResolverTimeoutMs = 10000
-	)
+const (
+	dnsResolverIP        = "151.80.222.79:53"
+	dnsResolverProto     = "udp"
+	dnsResolverTimeoutMs = 10000
+)
 
+var nicHTTPClient = func() *http.Client {
 	dialer := &net.Dialer{
 		Resolver: &net.Resolver{
 			PreferGo: true,
@@ -35,22 +35,21 @@ func GetNic(link, referer, cookie string) (string, error) {
 		KeepAlive: 120 * time.Second,
 	}
 
-	dialContext := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		return dialer.DialContext(ctx, network, addr)
-	}
-
 	transport := &http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           dialContext,
+		DialContext:           dialer.DialContext,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
-	httpClient := &http.Client{Transport: transport}
+	return &http.Client{Transport: transport, Timeout: 120 * time.Second}
+}()
 
+func GetNic(link, referer, cookie string) (string, error) {
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
 		return "", err
@@ -64,11 +63,14 @@ func GetNic(link, referer, cookie string) (string, error) {
 		req.Header.Set("referer", referer)
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := nicHTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+	}()
 	if resp.StatusCode == 404 {
 		log.Println("Error get link:", link, resp.StatusCode, resp.Status)
 		return "", Err404

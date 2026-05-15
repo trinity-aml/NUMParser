@@ -196,6 +196,7 @@ func getCollectionId(coll *ml.Collection, ents []*models.Entity) *CollectionId {
 		BackdropPath: "",
 	}
 
+	rutorHost := config.RutorHost()
 	for _, e := range ents {
 		if e != nil && e.GetTorrent() != nil {
 			var countries []string
@@ -215,7 +216,7 @@ func getCollectionId(coll *ml.Collection, ents []*models.Entity) *CollectionId {
 				Upload:   strconv.Itoa(d.Seed),
 				Download: strconv.Itoa(d.Peer),
 				Source:   "Rutor",
-				Link:     d.Link,
+				Link:     config.JoinRutorLink(rutorHost, d.Link),
 				Quality:  d.VideoQuality,
 				Voice:    d.AudioQuality,
 			}

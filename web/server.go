@@ -62,7 +62,14 @@ func setupRouter() *gin.Engine {
 	r.GET("/search", func(c *gin.Context) {
 		if query, ok := c.GetQuery("query"); ok {
 			torrs := db.SearchTorr(query)
-			c.JSON(200, torrs)
+			host := config.RutorHost()
+			out := make([]interface{}, 0, len(torrs))
+			for _, t := range torrs {
+				cp := *t
+				cp.Link = config.JoinRutorLink(host, cp.Link)
+				out = append(out, cp)
+			}
+			c.JSON(200, out)
 			return
 		}
 		c.Status(http.StatusBadRequest)

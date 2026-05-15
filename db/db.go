@@ -20,7 +20,5 @@ func SaveAll() {
 }
 
 func GetTorrs() []*models.TorrentDetails {
-	var torrs []*models.TorrentDetails
-	torrs = append(torrs, rutor.GetTorrs()...)
-	return torrs
+	return rutor.GetTorrs()
 }

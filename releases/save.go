@@ -26,6 +26,7 @@ func save(fname string, ents []*models.Entity) {
 	rid := new(ReleasesID)
 	rid.Date = time.Now().Format("02.01.2006")
 	rid.Time = time.Now().Format("15:04:05")
+	rutorHost := config.RutorHost()
 	for _, e := range ents {
 		if e != nil && e.GetTorrent() != nil {
 			var countries []string
@@ -45,7 +46,7 @@ func save(fname string, ents []*models.Entity) {
 				Upload:   strconv.Itoa(d.Seed),
 				Download: strconv.Itoa(d.Peer),
 				Source:   "Rutor",
-				Link:     d.Link,
+				Link:     config.JoinRutorLink(rutorHost, d.Link),
 				Quality:  d.VideoQuality,
 				Voice:    d.AudioQuality,
 			}

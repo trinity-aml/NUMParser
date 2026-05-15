@@ -1,6 +1,7 @@
 package rutor
 
 import (
+	"NUMParser/config"
 	"NUMParser/db/db"
 	"NUMParser/db/models"
 	"NUMParser/db/torrsearch"
@@ -17,6 +18,7 @@ import (
 
 var (
 	torrs         []*models.TorrentDetails
+	hashIndex     map[string]int
 	IsTorrsChange bool
 	muTorrs       sync.Mutex
 )
@@ -30,6 +32,10 @@ func Init() {
 		bucket = bucket.Bucket([]byte("Torrents"))
 		if bucket == nil {
 			return nil
+		}
+		stats := bucket.Stats()
+		if stats.KeyN > 0 {
+			torrs = make([]*models.TorrentDetails, 0, stats.KeyN)
 		}
 		err := bucket.ForEach(func(_, v []byte) error {
 			var torr *models.TorrentDetails
@@ -45,11 +51,22 @@ func Init() {
 		return nil
 	})
 
+	rebuildHashIndex()
 	torrsearch.NewIndex(torrs)
+}
+
+func rebuildHashIndex() {
+	hashIndex = make(map[string]int, len(torrs))
+	for i, t := range torrs {
+		if t.Hash != "" {
+			hashIndex[t.Hash] = i
+		}
+	}
 }
 
 func RemoveAll() {
 	torrs = nil
+	hashIndex = nil
 	db.DB.Update(func(tx *bolt.Tx) error {
 		tx.DeleteBucket([]byte("Rutor"))
 		return nil
@@ -62,6 +79,7 @@ func GetTorrs() []*models.TorrentDetails {
 
 func SetTorrs(list []*models.TorrentDetails) {
 	torrs = list
+	rebuildHashIndex()
 	IsTorrsChange = true
 }
 
@@ -69,17 +87,22 @@ func AddTorr(t *models.TorrentDetails) {
 	muTorrs.Lock()
 	defer muTorrs.Unlock()
 
+	if hashIndex == nil {
+		hashIndex = make(map[string]int, len(torrs)+1)
+	}
+
 	if t.Hash != "" {
-		for i, tdb := range torrs {
-			if tdb.Hash == t.Hash {
-				t.IMDBID = torrs[i].IMDBID
-				torrs[i] = t
-				return
-			}
+		if i, ok := hashIndex[t.Hash]; ok {
+			t.IMDBID = torrs[i].IMDBID
+			torrs[i] = t
+			return
 		}
 	}
 
 	IsTorrsChange = true
+	if t.Hash != "" {
+		hashIndex[t.Hash] = len(torrs)
+	}
 	torrs = append(torrs, t)
 }
 
@@ -129,18 +152,18 @@ func removeOldTorr() {
 	muTorrs.Lock()
 	defer muTorrs.Unlock()
 
-	var list []*models.TorrentDetails
-	inResult := make(map[string]bool)
+	list := make([]*models.TorrentDetails, 0, len(torrs))
+	inResult := make(map[string]struct{}, len(torrs))
 
 	for _, t := range torrs {
-		link := t.Link
-		if _, ok := inResult[link]; !ok {
-			inResult[link] = true
+		if _, ok := inResult[t.Link]; !ok {
+			inResult[t.Link] = struct{}{}
 			list = append(list, t)
 		}
 	}
 
 	torrs = list
+	rebuildHashIndex()
 }
 
 func saveRutorLS() {
@@ -160,8 +183,16 @@ func saveRutorLS() {
 	}
 	defer w.Close()
 
+	rutorHost := config.RutorHost()
+	out := make([]*models.TorrentDetails, len(torrs))
+	for i, t := range torrs {
+		cp := *t
+		cp.Link = config.JoinRutorLink(rutorHost, cp.Link)
+		out[i] = &cp
+	}
+
 	enc := json.NewEncoder(w)
-	err = enc.Encode(torrs)
+	err = enc.Encode(out)
 	if err != nil {
 		log.Println("Error save torrs:", err)
 		return

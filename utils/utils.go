@@ -18,7 +18,7 @@ func Abs(x int) int {
 }
 
 func Filter[T any](arr []T, fn func(i int, e T) bool) []T {
-	var list []T
+	list := make([]T, 0, len(arr))
 	for i, t := range arr {
 		if !fn(i, t) {
 			list = append(list, t)

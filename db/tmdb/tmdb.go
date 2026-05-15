@@ -59,6 +59,8 @@ func GetTV(id int64) *models.Entity {
 	return ent
 }
 
+var errStopIter = errors.New("stop")
+
 func FindIMDB(id string) *models.Entity {
 	var ent *models.Entity
 	db.DB.View(func(tx *bolt.Tx) error {
@@ -70,38 +72,29 @@ func FindIMDB(id string) *models.Entity {
 		if bucket == nil {
 			return nil
 		}
-		bckt := bucket.Bucket([]byte("TV"))
-		if bckt == nil {
+		scan := func(name string) {
+			b := bucket.Bucket([]byte(name))
+			if b == nil {
+				return
+			}
+			b.ForEach(func(_, v []byte) error {
+				var e *models.Entity
+				if err := json.Unmarshal(v, &e); err != nil {
+					log.Println("Error read from db TMDB:", err)
+					return nil
+				}
+				if e.ImdbID == id {
+					ent = e
+					return errStopIter
+				}
+				return nil
+			})
+		}
+		scan("TV")
+		if ent != nil {
 			return nil
 		}
-		bckt.ForEach(func(_, v []byte) error {
-			var e *models.Entity
-			err := json.Unmarshal(v, &e)
-			if err != nil {
-				log.Fatalln("Error read from db TMDB:", err)
-			}
-			if e.ImdbID == id {
-				ent = e
-				return errors.New("")
-			}
-			return nil
-		})
-		bckt = bucket.Bucket([]byte("Movies"))
-		if bckt == nil {
-			return nil
-		}
-		bckt.ForEach(func(_, v []byte) error {
-			var e *models.Entity
-			err := json.Unmarshal(v, &e)
-			if err != nil {
-				log.Fatalln("Error read from db TMDB:", err)
-			}
-			if e.ImdbID == id {
-				ent = e
-				return errors.New("")
-			}
-			return nil
-		})
+		scan("Movies")
 		return nil
 	})
 	return ent
@@ -114,14 +107,14 @@ func AddTMDB(t *models.Entity) {
 		if err != nil {
 			return err
 		}
-		bucket, err = tx.CreateBucketIfNotExists([]byte("Ents"))
+		bucket, err = bucket.CreateBucketIfNotExists([]byte("Ents"))
 		if err != nil {
 			return err
 		}
 		if t.MediaType == "movie" {
-			bucket, err = tx.CreateBucketIfNotExists([]byte("Movies"))
+			bucket, err = bucket.CreateBucketIfNotExists([]byte("Movies"))
 		} else {
-			bucket, err = tx.CreateBucketIfNotExists([]byte("TV"))
+			bucket, err = bucket.CreateBucketIfNotExists([]byte("TV"))
 		}
 		if err != nil {
 			return err

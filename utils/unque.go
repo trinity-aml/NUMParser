@@ -7,12 +7,12 @@ import (
 )
 
 func UniqueTorrList(arr []*models.TorrentDetails) []*models.TorrentDetails {
-	inResult := make(map[string]bool)
-	var result []*models.TorrentDetails
+	inResult := make(map[string]struct{}, len(arr))
+	result := make([]*models.TorrentDetails, 0, len(arr))
 	for _, t := range arr {
 		hash := ClearStr(t.Name + t.GetNames() + strconv.Itoa(t.Year))
 		if _, ok := inResult[hash]; !ok {
-			inResult[hash] = true
+			inResult[hash] = struct{}{}
 			result = append(result, t)
 		}
 	}
@@ -20,12 +20,12 @@ func UniqueTorrList(arr []*models.TorrentDetails) []*models.TorrentDetails {
 }
 
 func Distinct[T any](arr []T, getHash func(e T) string) []T {
-	inResult := make(map[string]bool)
-	var result []T
+	inResult := make(map[string]struct{}, len(arr))
+	result := make([]T, 0, len(arr))
 	for _, t := range arr {
 		hash := getHash(t)
 		if _, ok := inResult[hash]; !ok {
-			inResult[hash] = true
+			inResult[hash] = struct{}{}
 			result = append(result, t)
 		}
 	}
@@ -33,12 +33,13 @@ func Distinct[T any](arr []T, getHash func(e T) string) []T {
 }
 
 func ClearStr(str string) string {
-	ret := ""
 	str = strings.ToLower(str)
+	var b strings.Builder
+	b.Grow(len(str))
 	for _, r := range str {
 		if (r >= '0' && r <= '9') || (r >= 'a' && r <= 'z') || (r >= 'а' && r <= 'я') || r == 'ё' {
-			ret = ret + string(r)
+			b.WriteRune(r)
 		}
 	}
-	return ret
+	return b.String()
 }
